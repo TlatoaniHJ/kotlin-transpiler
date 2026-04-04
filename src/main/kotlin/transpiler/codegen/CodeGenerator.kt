@@ -58,6 +58,10 @@ class CodeGenerator(val config: Config = Config.default) {
     // Tracks variable names whose initializer is a set-like type (TreeSet, HashSet, etc.)
     private val setVars = mutableSetOf<String>()
 
+    // Tracks variable names whose initializer is a PQ or java.util.Stack
+    private val pqVars = mutableSetOf<String>()
+    private val stackVars = mutableSetOf<String>()
+
     // Tracks locally defined function names (to avoid stdlib mapping conflicts)
     private val localFunctionNames = mutableSetOf<String>()
 
@@ -66,6 +70,23 @@ class CodeGenerator(val config: Config = Config.default) {
 
     // Tracks variable names whose type is a user-defined class (skip stdlib method mapping)
     private val userClassVars = mutableSetOf<String>()
+
+    /** Copy variable tracking state from parent generator to this sub-generator. */
+    fun inheritTrackingFrom(parent: CodeGenerator) {
+        stringBuilderVars.addAll(parent.stringBuilderVars)
+        setVars.addAll(parent.setVars)
+        pqVars.addAll(parent.pqVars)
+        stackVars.addAll(parent.stackVars)
+        localFunctionNames.addAll(parent.localFunctionNames)
+        userDefinedClassNames.addAll(parent.userDefinedClassNames)
+        userClassVars.addAll(parent.userClassVars)
+    }
+
+    private fun createSubGenerator(): CodeGenerator {
+        val sub = CodeGenerator(config)
+        sub.inheritTrackingFrom(this)
+        return sub
+    }
 
     // ─── Main entry point ─────────────────────────────────────────────────────
 
@@ -107,17 +128,24 @@ class CodeGenerator(val config: Config = Config.default) {
         // Register user-defined class names so we skip stdlib mapping for them
         for (cls in classes) userDefinedClassNames.add(cls.name)
 
-        // Classes first (needed by functions)
-        for (cls in classes) genClassDecl(cls)
-        for (obj in objects) genObjectDecl(obj)
-
-        // Global variables
+        // Top-level properties first (constants must be visible to classes)
         for (prop in properties) genTopLevelProperty(prop)
         if (properties.isNotEmpty()) emit("")
+
+        // Classes (needed by functions)
+        for (cls in classes) genClassDecl(cls)
+        for (obj in objects) genObjectDecl(obj)
 
         // Non-main functions
         val nonMain = functions.filter { it.name != "main" }
         val mainFn  = functions.firstOrNull { it.name == "main" }
+
+        // Emit forward declarations for all non-main functions (C++ needs these for forward references)
+        if (nonMain.size > 1) {
+            for (fn in nonMain) { genFunctionPrototype(fn) }
+            emit("")
+        }
+
         for (fn in nonMain) { genFunctionDecl(fn); emit("") }
 
         // main function
@@ -182,6 +210,13 @@ class CodeGenerator(val config: Config = Config.default) {
         }
     }
 
+    /** Emit a forward declaration (prototype) for a top-level function. */
+    private fun genFunctionPrototype(fn: FunctionDecl) {
+        val retType = retTypeToCpp(fn)
+        val params = fn.params.joinToString(", ") { paramToCpp(it) }
+        emit("$retType ${fn.name}($params);")
+    }
+
     /** Inner function (nested fun) → local lambda assigned to auto variable. */
     private fun genLocalFunction(fn: FunctionDecl) {
         localFunctionNames.add(fn.name)
@@ -233,7 +268,7 @@ class CodeGenerator(val config: Config = Config.default) {
         is MethodCallExpression -> exprReferencesName(expr.receiver, name) || expr.args.any { exprReferencesName(it.value, name) }
             || (expr.trailingLambda?.body?.any { stmtReferencesName(it, name) } ?: false)
         is PropertyAccessExpr -> exprReferencesName(expr.receiver, name)
-        is IndexAccess -> exprReferencesName(expr.receiver, name) || exprReferencesName(expr.index, name)
+        is IndexAccess -> exprReferencesName(expr.receiver, name) || exprReferencesName(expr.index, name) || expr.additionalIndices.any { exprReferencesName(it, name) }
         is IfExpression -> exprReferencesName(expr.condition, name) || ifBranchReferencesName(expr.thenBranch, name) || ifBranchReferencesName(expr.elseBranch, name)
         is ElvisExpression -> exprReferencesName(expr.left, name) || exprReferencesName(expr.right, name)
         is TypeCheckExpression -> exprReferencesName(expr.expr, name)
@@ -434,6 +469,13 @@ class CodeGenerator(val config: Config = Config.default) {
         if (p.initializer != null && isSetInit(p.initializer)) {
             setVars.add(p.name)
         }
+        // Track PQ and Stack variables
+        if (p.initializer != null && isPQInit(p.initializer)) {
+            pqVars.add(p.name)
+        }
+        if (p.initializer != null && isJavaStackInit(p.initializer)) {
+            stackVars.add(p.name)
+        }
         // Track variables initialized with user-defined class constructors
         if (p.initializer != null && isUserClassInit(p.initializer)) {
             userClassVars.add(p.name)
@@ -442,12 +484,13 @@ class CodeGenerator(val config: Config = Config.default) {
         // Kotlin val = immutable reference, but the object may be mutable (e.g. mutableListOf).
         // In C++ const prevents mutation of the object itself, so skip const for mutable containers.
         val useConst = !p.isMutable && p.initializer != null && !isMutableContainerInit(p.initializer)
+        val varName = sanitizeName(p.name)
         if (p.type != null) {
             val constQ = if (useConst) "const " else ""
-            emit("$constQ${typeToCpp(p.type)} ${p.name}$init;")
+            emit("$constQ${typeToCpp(p.type)} $varName$init;")
         } else {
             val constQ = if (useConst) "const " else ""
-            emit("${constQ}auto ${p.name}$init;")
+            emit("${constQ}auto $varName$init;")
         }
     }
 
@@ -479,6 +522,17 @@ class CodeGenerator(val config: Config = Config.default) {
             }
             typeName in setTypeNames
         }
+        else -> false
+    }
+
+    private fun isPQInit(expr: Expression): Boolean = when (expr) {
+        is CallExpression -> expr.callee is NameReference && (expr.callee as NameReference).name == "PriorityQueue"
+        else -> false
+    }
+
+    private fun isJavaStackInit(expr: Expression): Boolean = when (expr) {
+        is CallExpression -> expr.callee is NameReference && (expr.callee as NameReference).name == "Stack"
+                && (expr.callee as NameReference).name !in userDefinedClassNames
         else -> false
     }
 
@@ -784,7 +838,12 @@ class CodeGenerator(val config: Config = Config.default) {
 
         is NameReference    -> sanitizeName(expr.name)
         is PropertyAccessExpr -> genPropertyAccess(expr)
-        is IndexAccess      -> "${genExpr(expr.receiver)}[${genExpr(expr.index)}]"
+        is IndexAccess      -> if (expr.additionalIndices.isNotEmpty()) {
+            val allArgs = (listOf(expr.index) + expr.additionalIndices).joinToString(", ") { genExpr(it) }
+            "${genExpr(expr.receiver)}.get($allArgs)"
+        } else {
+            "${genExpr(expr.receiver)}[${genExpr(expr.index)}]"
+        }
         is ThisExpression   -> "this"
         is SuperExpression  -> "/* super */"
 
@@ -922,13 +981,23 @@ class CodeGenerator(val config: Config = Config.default) {
     }
 
     private fun genRangeAsValue(range: RangeExpression): String {
-        // Ranges as values (not in for) — return a pair so they can be iterated
+        // Ranges used as values (not in for loops) — materialize as a vector
         val s = genExpr(range.start)
         val e = genExpr(range.end)
+        val step = range.step?.let { genExpr(it) }
         return when (range.kind) {
-            RangeKind.Inclusive -> "/* range $s..$e */"
-            RangeKind.Until     -> "/* range $s until $e */"
-            RangeKind.DownTo    -> "/* range $s downTo $e */"
+            RangeKind.Inclusive -> {
+                val inc = if (step != null) "_i += $step" else "_i++"
+                "[&]() { vector<int> _r; for (auto _i = $s; _i <= $e; $inc) _r.push_back(_i); return _r; }()"
+            }
+            RangeKind.Until -> {
+                val inc = if (step != null) "_i += $step" else "_i++"
+                "[&]() { vector<int> _r; for (auto _i = $s; _i < $e; $inc) _r.push_back(_i); return _r; }()"
+            }
+            RangeKind.DownTo -> {
+                val dec = if (step != null) "_i -= $step" else "_i--"
+                "[&]() { vector<int> _r; for (auto _i = $s; _i >= $e; $dec) _r.push_back(_i); return _r; }()"
+            }
         }
     }
 
@@ -1014,9 +1083,16 @@ class CodeGenerator(val config: Config = Config.default) {
             "LinkedHashMap" -> "map<${typeArg(0)}, ${typeArg(1)}>($argsCpp)"
             "LinkedHashSet" -> "set<${typeArg(0)}>($argsCpp)"
             "ArrayDeque"    -> "deque<${typeArg(0)}>($argsCpp)"
-            "PriorityQueue" -> "priority_queue<${typeArg(0)}>($argsCpp)"
+            "PriorityQueue" -> {
+                val elem = typeArg(0)
+                if (args.isNotEmpty()) {
+                    // PriorityQueue with comparator
+                    val cmp = genExpr(args[0].value)
+                    "[&]() { auto _cmp = $cmp; return priority_queue<$elem, vector<$elem>, decltype(_cmp)>(_cmp); }()"
+                } else "priority_queue<$elem>()"
+            }
             "ArrayList"     -> "vector<${typeArg(0)}>($argsCpp)"
-            "Stack"         -> "stack<${typeArg(0)}>($argsCpp)"
+            "Stack"         -> "deque<${typeArg(0)}>($argsCpp)"
             "StringBuilder" -> "ostringstream($argsCpp)"
             else            -> null
         }
@@ -1046,6 +1122,29 @@ class CodeGenerator(val config: Config = Config.default) {
                 "toString" -> if (expr.args.isEmpty()) return "$recv.str()"
                 "append" -> if (expr.args.size == 1) return "{ $recv << ${genExpr(expr.args[0].value)}; }"
                 "clear" -> if (expr.args.isEmpty()) return "$recv.str(\"\")"
+            }
+        }
+
+        // PriorityQueue method overrides
+        if (expr.receiver is NameReference && (expr.receiver as NameReference).name in pqVars) {
+            val recv = genExpr(expr.receiver)
+            when (expr.method) {
+                "add", "offer" -> if (expr.args.size == 1) return "$recv.push(${genExpr(expr.args[0].value)})"
+                "poll", "remove" -> if (expr.args.isEmpty()) return "([&]() { auto _v = $recv.top(); $recv.pop(); return _v; }())"
+                "peek" -> if (expr.args.isEmpty()) return "$recv.top()"
+            }
+        }
+
+        // java.util.Stack method overrides (Stack maps to std::deque)
+        if (expr.receiver is NameReference && (expr.receiver as NameReference).name in stackVars) {
+            val recv = genExpr(expr.receiver)
+            when (expr.method) {
+                "push" -> if (expr.args.size == 1) return "$recv.push_back(${genExpr(expr.args[0].value)})"
+                "pop" -> if (expr.args.isEmpty()) return "([&]() { auto _v = $recv.back(); $recv.pop_back(); return _v; }())"
+                "peek" -> if (expr.args.isEmpty()) return "$recv.back()"
+                "isEmpty" -> if (expr.args.isEmpty()) return "$recv.empty()"
+                "size" -> if (expr.args.isEmpty()) return "(int)$recv.size()"
+                "max" -> if (expr.args.isEmpty()) return "(*max_element($recv.begin(), $recv.end()))"
             }
         }
 
@@ -1120,7 +1219,7 @@ class CodeGenerator(val config: Config = Config.default) {
             }
 
             // We have to build the if inline using a sub-generator
-            val sub = CodeGenerator(config)
+            val sub = createSubGenerator()
             sub.emit("if ($cond) {")
             sub.indent { thenStmts.forEach { sub.genStatement(it) } }
             sub.emit("} else {")
@@ -1133,7 +1232,7 @@ class CodeGenerator(val config: Config = Config.default) {
 
     private fun genWhenExpression(expr: WhenExpression): String {
         // Emit as immediately-invoked lambda
-        val sub = CodeGenerator(config)
+        val sub = createSubGenerator()
         val subject = expr.subject
         val subjectExpr = subject?.expr?.let { genExpr(it) }
 
@@ -1214,7 +1313,7 @@ class CodeGenerator(val config: Config = Config.default) {
                 }
             } else {
                 append(" {")
-                val sub = CodeGenerator(config)
+                val sub = createSubGenerator()
                 body.forEach { sub.genStatement(it) }
                 append("\n")
                 append(sub.out.toString().trimEnd())
@@ -1234,7 +1333,7 @@ class CodeGenerator(val config: Config = Config.default) {
      * use inside `[&]() { ... }()` blocks).
      */
     fun genLambdaBodyStatements(lambda: LambdaExpression): String {
-        val sub = CodeGenerator(config)
+        val sub = createSubGenerator()
         lambda.body.forEach { sub.genStatement(it) }
         return sub.out.toString().trimEnd()
     }
@@ -1261,7 +1360,7 @@ class CodeGenerator(val config: Config = Config.default) {
             is CallExpression -> exprUsesIt(expr.callee) || expr.args.any { exprUsesIt(it.value) }
             is MethodCallExpression -> exprUsesIt(expr.receiver) || expr.args.any { exprUsesIt(it.value) }
             is PropertyAccessExpr -> exprUsesIt(expr.receiver)
-            is IndexAccess -> exprUsesIt(expr.receiver) || exprUsesIt(expr.index)
+            is IndexAccess -> exprUsesIt(expr.receiver) || exprUsesIt(expr.index) || expr.additionalIndices.any { exprUsesIt(it) }
             is IfExpression -> exprUsesIt(expr.condition)
             is ElvisExpression -> exprUsesIt(expr.left) || exprUsesIt(expr.right)
             is TypeCheckExpression -> exprUsesIt(expr.expr)
@@ -1294,7 +1393,7 @@ class CodeGenerator(val config: Config = Config.default) {
         val indexVar = lambda.params.firstOrNull()?.name?.let {
             if (it == "it") "_it" else it
         } ?: "_i"
-        val sub = CodeGenerator(config)
+        val sub = createSubGenerator()
         sub.emit("for (int $indexVar = 0; $indexVar < $n; $indexVar++) {")
         sub.indent { lambda.body.forEach { sub.genStatement(it) } }
         sub.emit("}")
@@ -1304,7 +1403,7 @@ class CodeGenerator(val config: Config = Config.default) {
     fun genForEach(receiver: String, lambda: LambdaExpression, indexed: Boolean): String {
         val elemVar = lambda.params.getOrNull(0)?.name?.let { if (it == "it") "_it" else it } ?: "_it"
         val idxVar  = if (indexed) lambda.params.getOrNull(1)?.name ?: "_idx" else null
-        val sub = CodeGenerator(config)
+        val sub = createSubGenerator()
         // Push forEach label so return@forEach → continue
         sub.inlineLambdaLabels.addLast("forEach")
         if (indexed) sub.inlineLambdaLabels.addLast("forEachIndexed")
@@ -1427,13 +1526,14 @@ class CodeGenerator(val config: Config = Config.default) {
         val bodyExpr = if (lambda.body.size == 1 && lambda.body[0] is ExpressionStatement)
             genExpr((lambda.body[0] as ExpressionStatement).expr)
         else "[&]() { ${genLambdaBodyStatements(lambda)} }()"
-        return "[&]() { vector<$elemType> _v($size); for (int $idxVar = 0; $idxVar < $size; $idxVar++) _v[$idxVar] = $bodyExpr; return _v; }()"
+        val resolvedType = if (elemType == "auto") "decay_t<decltype($bodyExpr)>" else elemType
+        return "[&]() { vector<$resolvedType> _v($size); for (int $idxVar = 0; $idxVar < $size; $idxVar++) _v[$idxVar] = $bodyExpr; return _v; }()"
     }
 
     fun genBuildString(lambda: LambdaExpression): String {
         // The lambda body uses `this` or `it` as a StringBuilder.
         // We'll rename to a local ostringstream.
-        val sub = CodeGenerator(config)
+        val sub = createSubGenerator()
         sub.emit("ostringstream _sb;")
         // Replace any reference to the implicit builder
         lambda.body.forEach { sub.genStatement(it) }
@@ -1444,7 +1544,7 @@ class CodeGenerator(val config: Config = Config.default) {
     fun genWithScope(receiver: String, lambda: LambdaExpression): String {
         // `with(obj) { ... }` – the lambda body can refer to obj's members without receiver
         // We generate: [&]() { auto& _recv = receiver; ... }()
-        val sub = CodeGenerator(config)
+        val sub = createSubGenerator()
         sub.emit("auto& _recv = $receiver;")
         lambda.body.forEach { sub.genStatement(it) }
         return "[&]() -> auto { ${sub.out.toString().trimEnd()} }()"
@@ -1452,7 +1552,7 @@ class CodeGenerator(val config: Config = Config.default) {
 
     fun genLet(receiver: String, lambda: LambdaExpression): String {
         val paramName = lambda.params.getOrNull(0)?.name?.let { if (it == "it") "_it" else it } ?: "_it"
-        val sub = CodeGenerator(config)
+        val sub = createSubGenerator()
         sub.emit("auto& $paramName = $receiver;")
         lambda.body.forEach { sub.genStatement(it) }
         return "[&]() -> auto { ${sub.out.toString().trimEnd()} }()"
@@ -1460,7 +1560,7 @@ class CodeGenerator(val config: Config = Config.default) {
 
     fun genAlso(receiver: String, lambda: LambdaExpression): String {
         val paramName = lambda.params.getOrNull(0)?.name?.let { if (it == "it") "_it" else it } ?: "_it"
-        val sub = CodeGenerator(config)
+        val sub = createSubGenerator()
         sub.emit("auto& $paramName = $receiver;")
         lambda.body.forEach { sub.genStatement(it) }
         sub.emit("return $paramName;")
@@ -1468,13 +1568,13 @@ class CodeGenerator(val config: Config = Config.default) {
     }
 
     fun genApply(receiver: String, lambda: LambdaExpression): String {
-        val sub = CodeGenerator(config)
+        val sub = createSubGenerator()
         lambda.body.forEach { sub.genStatement(it) }
         return "[&]() -> auto { auto& _self = $receiver; ${sub.out.toString().trimEnd()} return _self; }()"
     }
 
     fun genRunReceiver(receiver: String, lambda: LambdaExpression): String {
-        val sub = CodeGenerator(config)
+        val sub = createSubGenerator()
         lambda.body.forEach { sub.genStatement(it) }
         return "[&]() -> auto { auto& _self = $receiver; ${sub.out.toString().trimEnd()} }()"
     }
@@ -1569,6 +1669,12 @@ class CodeGenerator(val config: Config = Config.default) {
 
     // ─── Name sanitization ────────────────────────────────────────────────────
 
+    private val cppReservedTypeNames = setOf(
+        "stack", "set", "map", "string", "vector", "queue", "deque",
+        "list", "array", "pair", "tuple", "bitset", "multiset", "multimap",
+        "priority_queue", "unordered_set", "unordered_map"
+    )
+
     private fun sanitizeName(name: String): String = when (name) {
         "it"        -> "_it"
         "new"       -> "_new"
@@ -1579,6 +1685,7 @@ class CodeGenerator(val config: Config = Config.default) {
         "register"  -> "_register"
         "volatile"  -> "_volatile"
         "nullptr"   -> "_nullptr"
+        in cppReservedTypeNames -> "_$name"
         else        -> name
     }
 

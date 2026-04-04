@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="transpiler.TranspilerTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-04-04T18:11:37" hostname="Dannys-MBP-3" time="71.973">
+<testsuite name="transpiler.TranspilerTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-04-04T18:55:12" hostname="Dannys-MBP-3" time="69.202">
   <properties/>
-  <testcase name="arithmetic" classname="transpiler.TranspilerTest" time="5.033"/>
-  <testcase name="basic_io" classname="transpiler.TranspilerTest" time="4.34"/>
-  <testcase name="classes" classname="transpiler.TranspilerTest" time="4.574"/>
-  <testcase name="data_classes" classname="transpiler.TranspilerTest" time="5.141"/>
-  <testcase name="destructuring" classname="transpiler.TranspilerTest" time="4.845"/>
-  <testcase name="if_when" classname="transpiler.TranspilerTest" time="4.466"/>
-  <testcase name="labeled_breaks" classname="transpiler.TranspilerTest" time="4.482"/>
-  <testcase name="lambdas" classname="transpiler.TranspilerTest" time="4.87"/>
-  <testcase name="lists" classname="transpiler.TranspilerTest" time="4.908"/>
-  <testcase name="loops" classname="transpiler.TranspilerTest" time="4.654"/>
-  <testcase name="maps" classname="transpiler.TranspilerTest" time="5.073"/>
-  <testcase name="nested_functions" classname="transpiler.TranspilerTest" time="4.55"/>
-  <testcase name="sorting" classname="transpiler.TranspilerTest" time="5.725"/>
-  <testcase name="string_templates" classname="transpiler.TranspilerTest" time="4.475"/>
-  <testcase name="treeset_treemap" classname="transpiler.TranspilerTest" time="4.823"/>
+  <testcase name="arithmetic" classname="transpiler.TranspilerTest" time="5.229"/>
+  <testcase name="basic_io" classname="transpiler.TranspilerTest" time="4.179"/>
+  <testcase name="classes" classname="transpiler.TranspilerTest" time="4.375"/>
+  <testcase name="data_classes" classname="transpiler.TranspilerTest" time="4.905"/>
+  <testcase name="destructuring" classname="transpiler.TranspilerTest" time="4.673"/>
+  <testcase name="if_when" classname="transpiler.TranspilerTest" time="4.257"/>
+  <testcase name="labeled_breaks" classname="transpiler.TranspilerTest" time="4.296"/>
+  <testcase name="lambdas" classname="transpiler.TranspilerTest" time="4.661"/>
+  <testcase name="lists" classname="transpiler.TranspilerTest" time="4.639"/>
+  <testcase name="loops" classname="transpiler.TranspilerTest" time="4.467"/>
+  <testcase name="maps" classname="transpiler.TranspilerTest" time="4.949"/>
+  <testcase name="nested_functions" classname="transpiler.TranspilerTest" time="4.474"/>
+  <testcase name="sorting" classname="transpiler.TranspilerTest" time="5.166"/>
+  <testcase name="string_templates" classname="transpiler.TranspilerTest" time="4.265"/>
+  <testcase name="treeset_treemap" classname="transpiler.TranspilerTest" time="4.648"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -66,7 +66,12 @@ object StdlibMapper {
             "IntArray", "LongArray", "DoubleArray", "FloatArray",
             "BooleanArray", "CharArray" -> {
                 if (args.size == 1) {
-                    val elemType = name.removeSuffix("Array").lowercase()
+                    val elemType = when (name) {
+                        "IntArray" -> "int"; "LongArray" -> "long long"
+                        "DoubleArray" -> "double"; "FloatArray" -> "float"
+                        "BooleanArray" -> "bool"; "CharArray" -> "char"
+                        else -> "int"
+                    }
                     if (trailingLambda != null) {
                         val lambdaCpp = gen.genLambdaAsLoopInit(trailingLambda, arg(0), elemType)
                         lambdaCpp
@@ -78,6 +83,13 @@ object StdlibMapper {
             "Array" -> {
                 if (args.size == 1 && trailingLambda != null) {
                     gen.genLambdaAsLoopInit(trailingLambda, arg(0), "auto")
+                } else null
+            }
+            "List" -> {
+                if (args.size == 1 && trailingLambda != null) {
+                    gen.genLambdaAsLoopInit(trailingLambda, arg(0), "auto")
+                } else if (args.size == 1) {
+                    "vector<int>(${arg(0)})"
                 } else null
             }
             "MutableList" -> {
@@ -257,7 +269,6 @@ object StdlibMapper {
                               else null
             "split"        -> if (args.size == 1) null else null  // complex, skip
             "toCharArray"  -> "vector<char>($receiver.begin(), $receiver.end())"
-            "reversed"     -> if (args.isEmpty()) "string($receiver.rbegin(), $receiver.rend())" else null
 
             // ── Collection size / access ──────────────────────────────────────
             "size"       -> "$receiver.size()"
@@ -291,9 +302,11 @@ object StdlibMapper {
                                 "$receiver.insert($receiver.end(), ${arg(0)}.begin(), ${arg(0)}.end())"
                             else null
             "removeAt"   -> if (args.size == 1) "$receiver.erase($receiver.begin() + ${arg(0)})" else null
-            "remove"     -> if (args.size == 1)
-                                "{ auto _it = find($receiver.begin(), $receiver.end(), ${arg(0)}); if (_it != $receiver.end()) $receiver.erase(_it); }"
-                            else null
+            "remove"     -> when (args.size) {
+                0 -> "([&]() { auto _v = $receiver.top(); $receiver.pop(); return _v; }())"
+                1 -> "{ auto _it = find($receiver.begin(), $receiver.end(), ${arg(0)}); if (_it != $receiver.end()) $receiver.erase(_it); }"
+                else -> null
+            }
             "removeAll"  -> null
             "removeLast" -> "([&]() { auto _v = $receiver.back(); $receiver.pop_back(); return _v; }())"
             "removeFirst"-> "([&]() { auto _v = $receiver.front(); $receiver.erase($receiver.begin()); return _v; }())"
@@ -379,7 +392,6 @@ object StdlibMapper {
                 "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end(), [&](const auto& _a, const auto& _b) { return $key(_a) > $key(_b); }); return _v; }()"
             } else null
             "sortedWith"      -> if (args.size == 1) "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end(), ${arg(0)}); return _v; }()" else null
-            "reversed"        -> "[&]() { auto _v = $receiver; reverse(_v.begin(), _v.end()); return _v; }()"
 
             // ── Functional ────────────────────────────────────────────────────
             "map", "mapIndexed" -> if (trailingLambda != null)

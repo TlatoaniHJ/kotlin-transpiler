@@ -206,7 +206,7 @@ data class ExpressionStringPart(val expr: Expression) : StringPart()
 // Variables and members
 data class NameReference(val name: String) : Expression()
 data class PropertyAccessExpr(val receiver: Expression, val name: String, val isSafe: Boolean = false) : Expression()
-data class IndexAccess(val receiver: Expression, val index: Expression) : Expression()
+data class IndexAccess(val receiver: Expression, val index: Expression, val additionalIndices: List<Expression> = emptyList()) : Expression()
 data class ThisExpression(val qualifier: String? = null) : Expression()
 data class SuperExpression(val qualifier: String? = null) : Expression()
 

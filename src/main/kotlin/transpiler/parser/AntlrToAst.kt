@@ -193,6 +193,10 @@ class AntlrToAst : KotlinParserBaseVisitor<Any?>() {
                 // Unwrap IfExpression at statement position into IfStatement
                 if (expr is IfExpression) {
                     ifExprToStatement(expr)
+                }
+                // Unwrap WhenExpression at statement position into WhenStatement
+                else if (expr is WhenExpression) {
+                    WhenStatement(expr.subject, expr.entries)
                 } else {
                     ExpressionStatement(expr)
                 }
@@ -279,8 +283,11 @@ class AntlrToAst : KotlinParserBaseVisitor<Any?>() {
             if (ctx.assignableSuffix() != null) {
                 val suffix = ctx.assignableSuffix()
                 return when {
-                    suffix.indexingSuffix() != null ->
-                        IndexAccess(base, visitExpr(suffix.indexingSuffix().expression(0)))
+                    suffix.indexingSuffix() != null -> {
+                        val exprs = suffix.indexingSuffix().expression()
+                        val additional = if (exprs.size > 1) exprs.drop(1).map { visitExpr(it) } else emptyList()
+                        IndexAccess(base, visitExpr(exprs[0]), additional)
+                    }
                     suffix.navigationSuffix() != null -> {
                         val nav = suffix.navigationSuffix()
                         val name = nav.simpleIdentifier()?.text ?: "?"
@@ -561,8 +568,9 @@ class AntlrToAst : KotlinParserBaseVisitor<Any?>() {
                 suffix.indexingSuffix() != null -> {
                     i++
                     pendingTypeArgs = null
-                    val idx = suffix.indexingSuffix().expression(0)
-                    IndexAccess(result, visitExpr(idx))
+                    val exprs = suffix.indexingSuffix().expression()
+                    val additional = if (exprs.size > 1) exprs.drop(1).map { visitExpr(it) } else emptyList()
+                    IndexAccess(result, visitExpr(exprs[0]), additional)
                 }
                 suffix.navigationSuffix() != null -> {
                     val nav = suffix.navigationSuffix()
@@ -571,7 +579,15 @@ class AntlrToAst : KotlinParserBaseVisitor<Any?>() {
 
                     val memberName = nav.simpleIdentifier()?.text
                     if (memberName == null) { i++; pendingTypeArgs = null; result }
-                    else {
+                    else if (isScope) {
+                        // Method reference: receiver::method → lambda that calls method on receiver
+                        i++
+                        pendingTypeArgs = null
+                        // Generate: { _it -> receiver.method(_it) } as a lambda
+                        LambdaExpression(listOf(LambdaParam("_it")), listOf(
+                            ExpressionStatement(MethodCallExpression(result, memberName, emptyList(),
+                                listOf(CallArgument(null, NameReference("_it")))))))
+                    } else {
                         // Peek: if next suffix is a callSuffix, it's a method call
                         if (i + 1 < suffixes.size && suffixes[i + 1].callSuffix() != null) {
                             val callCtx = suffixes[i + 1].callSuffix()

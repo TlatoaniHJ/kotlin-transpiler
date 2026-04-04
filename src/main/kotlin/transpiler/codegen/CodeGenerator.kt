@@ -327,15 +327,23 @@ class CodeGenerator(val config: Config = Config.default) {
                 val constQual = if (f.isVal && cls.kind != ClassKind.Data) "const " else ""
                 emit("$constQual${typeToCpp(f.type)} ${f.name};")
             }
-            // Non-field constructor params (just ctor args) are also declared if needed by init
+            // Non-field constructor params: NOT emitted as members, only available in constructor
             val nonFieldCtorParams = cls.primaryConstructor.filter { !it.isVal && !it.isVar }
-            for (p in nonFieldCtorParams) {
-                emit("${typeToCpp(p.type)} ${p.name};")
+            val nonFieldParamNames = nonFieldCtorParams.map { it.name }.toSet()
+
+            // Member properties — split into those that depend on non-field ctor params
+            // (must be initialized in the constructor body) vs those that can use default init
+            val memberProps = cls.members.filterIsInstance<MemberProperty>()
+            val ctorInitProps = mutableListOf<MemberProperty>()
+            val defaultInitProps = mutableListOf<MemberProperty>()
+            for (mp in memberProps) {
+                val dependsOnCtorParam = mp.decl.initializer != null &&
+                    nonFieldParamNames.any { exprReferencesName(mp.decl.initializer, it) }
+                if (dependsOnCtorParam) ctorInitProps.add(mp) else defaultInitProps.add(mp)
             }
 
-            // Member properties
-            val memberProps = cls.members.filterIsInstance<MemberProperty>()
-            for (mp in memberProps) {
+            // Emit member properties with default initialization
+            for (mp in defaultInitProps) {
                 val init = if (mp.decl.initializer != null) " = ${genExpr(mp.decl.initializer)}" else ""
                 val useConst = !mp.decl.isMutable && (mp.decl.initializer == null || !isMutableContainerInit(mp.decl.initializer))
                 val constQ = if (useConst) "const " else ""
@@ -344,16 +352,30 @@ class CodeGenerator(val config: Config = Config.default) {
                 emit("$constQ$typeStr ${mp.decl.name}$init;")
             }
 
+            // Emit member properties that depend on ctor params (declaration only, init in constructor)
+            for (mp in ctorInitProps) {
+                val typeStr = if (mp.decl.type != null) typeToCpp(mp.decl.type)
+                              else inferTypeFromInitializer(mp.decl.initializer)
+                emit("$typeStr ${mp.decl.name};")
+            }
+
             emit("")
 
             // Constructor
             if (cls.primaryConstructor.isNotEmpty() || cls.members.any { it is InitBlock }) {
                 val ctorParams = cls.primaryConstructor.joinToString(", ") { p ->
-                    "${typeToCpp(p.type)} ${p.name}_"
+                    // val/var fields use name_ suffix to distinguish from the member
+                    // Non-field params keep their original name (usable in ctor body)
+                    if (p.isVal || p.isVar) "${typeToCpp(p.type)} ${p.name}_"
+                    else "${typeToCpp(p.type)} ${p.name}"
                 }
                 val fieldInits = fields.joinToString(", ") { "${it.name}(${it.name}_)" }
-                emit("${cls.name}($ctorParams) : $fieldInits {")
+                emit("${cls.name}($ctorParams)${if (fieldInits.isNotEmpty()) " : $fieldInits" else ""} {")
                 indent {
+                    // Initialize member properties that depend on ctor params
+                    for (mp in ctorInitProps) {
+                        emit("${mp.decl.name} = ${genExpr(mp.decl.initializer!!)};")
+                    }
                     // init blocks
                     for (m in cls.members) {
                         if (m is InitBlock) m.body.forEach { genStatement(it) }
@@ -1113,9 +1135,10 @@ class CodeGenerator(val config: Config = Config.default) {
             "PriorityQueue" -> {
                 val elem = typeArg(0)
                 if (args.isNotEmpty()) {
-                    // PriorityQueue with comparator
+                    // PriorityQueue with comparator — Kotlin PQ is a min-heap but C++ priority_queue
+                    // is a max-heap, so we invert the comparator: comp(a,b) → comp(b,a)
                     val cmp = genExpr(args[0].value)
-                    "[&]() { auto _cmp = $cmp; return priority_queue<$elem, vector<$elem>, decltype(_cmp)>(_cmp); }()"
+                    "[&]() { auto _kcmp = $cmp; auto _cmp = [_kcmp](const auto& a, const auto& b) { return _kcmp(b, a); }; return priority_queue<$elem, vector<$elem>, decltype(_cmp)>(_cmp); }()"
                 } else "priority_queue<$elem>()"
             }
             "ArrayList"     -> "vector<${typeArg(0)}>($argsCpp)"
@@ -1653,6 +1676,20 @@ class CodeGenerator(val config: Config = Config.default) {
                         "ArrayDeque"    -> { val e = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"; "deque<$e>" }
                         "PriorityQueue" -> { val e = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"; "priority_queue<$e>" }
                         "StringBuilder" -> "ostringstream"
+                        "IntArray" -> "vector<int>"
+                        "LongArray" -> "vector<long long>"
+                        "DoubleArray" -> "vector<double>"
+                        "FloatArray" -> "vector<float>"
+                        "BooleanArray" -> "vector<bool>"
+                        "CharArray" -> "vector<char>"
+                        "Array" -> {
+                            val e = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"
+                            "vector<$e>"
+                        }
+                        "List", "MutableList" -> {
+                            val e = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"
+                            "vector<$e>"
+                        }
                         else -> "decltype(${genExpr(init)})"
                     }
                 } else "decltype(${genExpr(init)})"

@@ -29,7 +29,7 @@
 </td>
 <td>
 <div class="infoBox" id="failures">
-<div class="counter">2</div>
+<div class="counter">0</div>
 <p>failures</p>
 </div>
 </td>
@@ -41,7 +41,7 @@
 </td>
 <td>
 <div class="infoBox" id="duration">
-<div class="counter">1m31.78s</div>
+<div class="counter">1m30.71s</div>
 <p>duration</p>
 </div>
 </td>
@@ -50,8 +50,8 @@
 </div>
 </td>
 <td>
-<div class="infoBox failures" id="successRate">
-<div class="percent">89%</div>
+<div class="infoBox success" id="successRate">
+<div class="percent">100%</div>
 <p>successful</p>
 </div>
 </td>
@@ -61,63 +61,10 @@
 <div id="tabs">
 <ul class="tabLinks">
 <li>
-<a href="#tab0">Failed tests</a>
-</li>
-<li>
-<a href="#tab1">Tests</a>
+<a href="#tab0">Tests</a>
 </li>
 </ul>
 <div id="tab0" class="tab">
-<h2>Failed tests</h2>
-<div class="test">
-<a name="allTests()[7]"></a>
-<h3 class="failures">example_dropshipping</h3>
-<span class="code">
-<pre>org.opentest4j.AssertionFailedError: Output mismatch for test 'example_dropshipping'.
-Kotlin stdout:
-7
-
-C++ stdout:
-2
- ==&gt; expected: &lt;7&gt; but was: &lt;2&gt;
-	at app//org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
-	at app//org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
-	at app//org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
-	at app//org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
-	at app//org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)
-	at app//transpiler.TranspilerTest.runTest(TranspilerTest.kt:96)
-	at app//transpiler.TranspilerTest.allTests$lambda$3$lambda$2(TranspilerTest.kt:41)
-	at java.base@11.0.11/java.util.Optional.ifPresent(Optional.java:183)
-	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
-	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
-</pre>
-</span>
-</div>
-<div class="test">
-<a name="allTests()[9]"></a>
-<h3 class="failures">example_omkar_time_travel</h3>
-<span class="code">
-<pre>org.opentest4j.AssertionFailedError: Output mismatch for test 'example_omkar_time_travel'.
-Kotlin stdout:
-138
-
-C++ stdout:
- ==&gt; expected: &lt;138&gt; but was: &lt;&gt;
-	at app//org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
-	at app//org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
-	at app//org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
-	at app//org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
-	at app//org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)
-	at app//transpiler.TranspilerTest.runTest(TranspilerTest.kt:96)
-	at app//transpiler.TranspilerTest.allTests$lambda$3$lambda$2(TranspilerTest.kt:41)
-	at java.base@11.0.11/java.util.Optional.ifPresent(Optional.java:183)
-	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
-	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
-</pre>
-</span>
-</div>
-</div>
-<div id="tab1" class="tab">
 <h2>Tests</h2>
 <table>
 <thead>
@@ -131,116 +78,116 @@ C++ stdout:
 <tr>
 <td class="success">if_when</td>
 <td class="success">allTests()[10]</td>
-<td class="success">4.418s</td>
+<td class="success">4.453s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">labeled_breaks</td>
 <td class="success">allTests()[11]</td>
-<td class="success">4.433s</td>
+<td class="success">4.454s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">lambdas</td>
 <td class="success">allTests()[12]</td>
-<td class="success">4.848s</td>
+<td class="success">4.774s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">lists</td>
 <td class="success">allTests()[13]</td>
-<td class="success">4.858s</td>
+<td class="success">4.923s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">loops</td>
 <td class="success">allTests()[14]</td>
-<td class="success">4.512s</td>
+<td class="success">4.573s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">maps</td>
 <td class="success">allTests()[15]</td>
-<td class="success">4.921s</td>
+<td class="success">5.015s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">nested_functions</td>
 <td class="success">allTests()[16]</td>
-<td class="success">4.478s</td>
+<td class="success">4.444s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">sorting</td>
 <td class="success">allTests()[17]</td>
-<td class="success">5.262s</td>
+<td class="success">5.264s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">string_templates</td>
 <td class="success">allTests()[18]</td>
-<td class="success">4.390s</td>
+<td class="success">4.413s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">treeset_treemap</td>
 <td class="success">allTests()[19]</td>
-<td class="success">4.733s</td>
+<td class="success">4.762s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">arithmetic</td>
 <td class="success">allTests()[1]</td>
-<td class="success">5.091s</td>
+<td class="success">4.950s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">basic_io</td>
 <td class="success">allTests()[2]</td>
-<td class="success">4.447s</td>
+<td class="success">4.239s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">classes</td>
 <td class="success">allTests()[3]</td>
-<td class="success">4.817s</td>
+<td class="success">4.513s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">data_classes</td>
 <td class="success">allTests()[4]</td>
-<td class="success">5.201s</td>
+<td class="success">4.987s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">destructuring</td>
 <td class="success">allTests()[5]</td>
-<td class="success">4.869s</td>
+<td class="success">4.794s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">example_deformed_balance</td>
 <td class="success">allTests()[6]</td>
-<td class="success">4.987s</td>
+<td class="success">4.872s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
-<td class="failures">example_dropshipping</td>
-<td class="failures">allTests()[7]</td>
-<td class="failures">5.074s</td>
-<td class="failures">failed</td>
+<td class="success">example_dropshipping</td>
+<td class="success">allTests()[7]</td>
+<td class="success">4.969s</td>
+<td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">example_jaimes_palace</td>
 <td class="success">allTests()[8]</td>
-<td class="success">5.007s</td>
+<td class="success">4.955s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
-<td class="failures">example_omkar_time_travel</td>
-<td class="failures">allTests()[9]</td>
-<td class="failures">5.434s</td>
-<td class="failures">failed</td>
+<td class="success">example_omkar_time_travel</td>
+<td class="success">allTests()[9]</td>
+<td class="success">5.356s</td>
+<td class="success">passed</td>
 </tr>
 </table>
 </div>
@@ -252,7 +199,7 @@ C++ stdout:
 <input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
 </label>
 </div>Generated by 
-<a href="http://www.gradle.org">Gradle 8.8</a> at Apr 4, 2026, 4:17:20 PM</p>
+<a href="http://www.gradle.org">Gradle 8.8</a> at Apr 4, 2026, 4:33:31 PM</p>
 </div>
 </div>
 </body>

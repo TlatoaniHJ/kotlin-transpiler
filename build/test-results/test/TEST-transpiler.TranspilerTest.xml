@@ -1,62 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="transpiler.TranspilerTest" tests="19" skipped="0" failures="2" errors="0" timestamp="2026-04-04T20:15:49" hostname="Dannys-MBP-3" time="91.807">
+<testsuite name="transpiler.TranspilerTest" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-04-04T20:32:00" hostname="Dannys-MBP-3" time="90.729">
   <properties/>
-  <testcase name="arithmetic" classname="transpiler.TranspilerTest" time="5.091"/>
-  <testcase name="basic_io" classname="transpiler.TranspilerTest" time="4.447"/>
-  <testcase name="classes" classname="transpiler.TranspilerTest" time="4.817"/>
-  <testcase name="data_classes" classname="transpiler.TranspilerTest" time="5.201"/>
-  <testcase name="destructuring" classname="transpiler.TranspilerTest" time="4.869"/>
-  <testcase name="example_deformed_balance" classname="transpiler.TranspilerTest" time="4.987"/>
-  <testcase name="example_dropshipping" classname="transpiler.TranspilerTest" time="5.074">
-    <failure message="org.opentest4j.AssertionFailedError: Output mismatch for test 'example_dropshipping'.&#10;Kotlin stdout:&#10;7&#10;&#10;C++ stdout:&#10;2&#10; ==&gt; expected: &lt;7&gt; but was: &lt;2&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: Output mismatch for test 'example_dropshipping'.
-Kotlin stdout:
-7
-
-C++ stdout:
-2
- ==&gt; expected: &lt;7&gt; but was: &lt;2&gt;
-	at app//org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
-	at app//org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
-	at app//org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
-	at app//org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
-	at app//org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)
-	at app//transpiler.TranspilerTest.runTest(TranspilerTest.kt:96)
-	at app//transpiler.TranspilerTest.allTests$lambda$3$lambda$2(TranspilerTest.kt:41)
-	at java.base@11.0.11/java.util.Optional.ifPresent(Optional.java:183)
-	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
-	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
-</failure>
-  </testcase>
-  <testcase name="example_jaimes_palace" classname="transpiler.TranspilerTest" time="5.007"/>
-  <testcase name="example_omkar_time_travel" classname="transpiler.TranspilerTest" time="5.434">
-    <failure message="org.opentest4j.AssertionFailedError: Output mismatch for test 'example_omkar_time_travel'.&#10;Kotlin stdout:&#10;138&#10;&#10;C++ stdout:&#10; ==&gt; expected: &lt;138&gt; but was: &lt;&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: Output mismatch for test 'example_omkar_time_travel'.
-Kotlin stdout:
-138
-
-C++ stdout:
- ==&gt; expected: &lt;138&gt; but was: &lt;&gt;
-	at app//org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
-	at app//org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
-	at app//org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
-	at app//org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
-	at app//org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)
-	at app//transpiler.TranspilerTest.runTest(TranspilerTest.kt:96)
-	at app//transpiler.TranspilerTest.allTests$lambda$3$lambda$2(TranspilerTest.kt:41)
-	at java.base@11.0.11/java.util.Optional.ifPresent(Optional.java:183)
-	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
-	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
-</failure>
-  </testcase>
-  <testcase name="if_when" classname="transpiler.TranspilerTest" time="4.418"/>
-  <testcase name="labeled_breaks" classname="transpiler.TranspilerTest" time="4.433"/>
-  <testcase name="lambdas" classname="transpiler.TranspilerTest" time="4.848"/>
-  <testcase name="lists" classname="transpiler.TranspilerTest" time="4.858"/>
-  <testcase name="loops" classname="transpiler.TranspilerTest" time="4.512"/>
-  <testcase name="maps" classname="transpiler.TranspilerTest" time="4.921"/>
-  <testcase name="nested_functions" classname="transpiler.TranspilerTest" time="4.478"/>
-  <testcase name="sorting" classname="transpiler.TranspilerTest" time="5.262"/>
-  <testcase name="string_templates" classname="transpiler.TranspilerTest" time="4.39"/>
-  <testcase name="treeset_treemap" classname="transpiler.TranspilerTest" time="4.733"/>
+  <testcase name="arithmetic" classname="transpiler.TranspilerTest" time="4.95"/>
+  <testcase name="basic_io" classname="transpiler.TranspilerTest" time="4.239"/>
+  <testcase name="classes" classname="transpiler.TranspilerTest" time="4.513"/>
+  <testcase name="data_classes" classname="transpiler.TranspilerTest" time="4.987"/>
+  <testcase name="destructuring" classname="transpiler.TranspilerTest" time="4.794"/>
+  <testcase name="example_deformed_balance" classname="transpiler.TranspilerTest" time="4.872"/>
+  <testcase name="example_dropshipping" classname="transpiler.TranspilerTest" time="4.969"/>
+  <testcase name="example_jaimes_palace" classname="transpiler.TranspilerTest" time="4.955"/>
+  <testcase name="example_omkar_time_travel" classname="transpiler.TranspilerTest" time="5.356"/>
+  <testcase name="if_when" classname="transpiler.TranspilerTest" time="4.453"/>
+  <testcase name="labeled_breaks" classname="transpiler.TranspilerTest" time="4.454"/>
+  <testcase name="lambdas" classname="transpiler.TranspilerTest" time="4.774"/>
+  <testcase name="lists" classname="transpiler.TranspilerTest" time="4.923"/>
+  <testcase name="loops" classname="transpiler.TranspilerTest" time="4.573"/>
+  <testcase name="maps" classname="transpiler.TranspilerTest" time="5.015"/>
+  <testcase name="nested_functions" classname="transpiler.TranspilerTest" time="4.444"/>
+  <testcase name="sorting" classname="transpiler.TranspilerTest" time="5.264"/>
+  <testcase name="string_templates" classname="transpiler.TranspilerTest" time="4.413"/>
+  <testcase name="treeset_treemap" classname="transpiler.TranspilerTest" time="4.762"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

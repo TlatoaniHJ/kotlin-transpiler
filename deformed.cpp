@@ -58,7 +58,7 @@ int solve(int minBalanced, int finalBalanced, int minDeformed, int finalDeformed
         end++;
         extra++;
     }
-    if (parity + end % 2 == 0) {
+    if ((parity + end) % 2 == 0) {
         end++;
         extra++;
     }

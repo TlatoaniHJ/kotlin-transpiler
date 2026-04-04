@@ -13,10 +13,12 @@ mt19937_64 rng64(chrono::steady_clock::now().time_since_epoch().count());
 int randInt(int lo, int hi) { return uniform_int_distribution<int>(lo, hi)(rng); }
 long long randLong(long long lo, long long hi) { return uniform_int_distribution<long long>(lo, hi)(rng64); }
 double randDouble() { return uniform_real_distribution<double>(0.0, 1.0)(rng); }
+const auto MOD = 1000000007LL;
+
 struct BinaryIndexTree {
     const int treeFrom;
     int treeTo;
-    decltype(vector<long>(treeTo - treeFrom + 2)) value = vector<long>(treeTo - treeFrom + 2);
+    decltype(vector<long long>(treeTo - treeFrom + 2)) value = vector<long long>(treeTo - treeFrom + 2);
 
     BinaryIndexTree(int treeFrom_, int treeTo_) : treeFrom(treeFrom_) {
     }
@@ -47,8 +49,6 @@ struct BinaryIndexTree {
 
 };
 
-const auto MOD = 1000000007LL;
-
 int main() {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
@@ -63,10 +63,10 @@ int main() {
         right[j] = b;
     }
     const auto sSize = nextInt();
-    const auto s = [&]() { auto _v = List(sSize, [&]() { return nextInt(); }); sort(_v.begin(), _v.end(), [&](const auto& _a, const auto& _b) { return [&](auto _it) { return right[_it]; }(_a) < [&](auto _it) { return right[_it]; }(_b); }); return _v; }();
+    const auto s = [&]() { auto _v = [&]() { vector<decay_t<decltype(nextInt())>> _v(sSize); for (int _i = 0; _i < sSize; _i++) _v[_i] = nextInt(); return _v; }(); sort(_v.begin(), _v.end(), [&](const auto& _a, const auto& _b) { return [&](auto _it) { return right[_it]; }(_a) < [&](auto _it) { return right[_it]; }(_b); }); return _v; }();
     auto next = vector<int>(n + 1);
     auto containing = n + 1;
-    for (auto& j : string(s.rbegin(), s.rend())) {
+    for (auto& j : vector<decay_t<decltype(s.front())>>(s.rbegin(), s.rend())) {
         if (containing == n + 1 || left[containing] < left[j] && right[j] < right[containing]) {
             next[j] = containing;
             containing = j;
@@ -74,16 +74,16 @@ int main() {
     }
     auto bit = BinaryIndexTree(1, 2 * n);
     auto answer = 0LL;
-    for (auto& j : [&]() { auto _v = /* range 1..n */; sort(_v.begin(), _v.end(), [&](const auto& _a, const auto& _b) { return [&](auto _it) { return right[_it]; }(_a) < [&](auto _it) { return right[_it]; }(_b); }); return _v; }()) {
+    for (auto& j : [&]() { auto _v = [&]() { vector<int> _r; for (auto _i = 1; _i <= n; _i++) _r.push_back(_i); return _r; }(); sort(_v.begin(), _v.end(), [&](const auto& _a, const auto& _b) { return [&](auto _it) { return right[_it]; }(_a) < [&](auto _it) { return right[_it]; }(_b); }); return _v; }()) {
         if (next[j] != 0) {
             if (next[j] == n + 1) {
-                answer += 1LL + bit[1];
+                answer += 1LL + bit.get(1, 2 * n);
             } else {
-                answer += 1LL + bit[left[next[j]]];
+                answer += 1LL + bit.get(left[next[j]], right[next[j]]);
             }
             answer %= MOD;
         }
-        bit.update(left[j], 1LL + bit[left[j]]);
+        bit.update(left[j], 1LL + bit.get(left[j], right[j]));
     }
     answer += MOD;
     answer %= MOD;

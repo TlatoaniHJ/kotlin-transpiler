@@ -938,19 +938,19 @@ class CodeGenerator(val config: Config = Config.default) {
 
         // Convert known property accesses
         return when (expr.name) {
-            "size"      -> if (safe) "($recv ? (int)$recv->size() : 0)" else "(int)$recv.size()"
-            "lastIndex" -> if (safe) "($recv ? (int)$recv->size()-1 : -1)" else "((int)$recv.size()-1)"
-            "first"     -> if (safe) "($recv ? $recv->front() : /* null */{})" else "$recv.front()"
-            "last"      -> if (safe) "($recv ? $recv->back()  : /* null */{})" else "$recv.back()"
+            "size"      -> if (safe) "([&]() { auto&& _c = $recv; return _c ? (int)_c->size() : 0; }())" else "(int)$recv.size()"
+            "lastIndex" -> if (safe) "([&]() { auto&& _c = $recv; return _c ? (int)_c->size()-1 : -1; }())" else "((int)$recv.size()-1)"
+            "first"     -> if (safe) "([&]() { auto&& _c = $recv; return _c ? _c->front() : /* null */{}; }())" else "$recv.front()"
+            "last"      -> if (safe) "([&]() { auto&& _c = $recv; return _c ? _c->back()  : /* null */{}; }())" else "$recv.back()"
             "indices"   -> "(0..(int)$recv.size()-1)"  // used in for loops
             "length"    -> "(int)$recv.size()"
             "isEmpty"   -> "$recv.empty()"
             "isNotEmpty"-> "(!$recv.empty())"
-            "entries"   -> "vector<pair<decay_t<decltype($recv.begin()->first)>, decay_t<decltype($recv.begin()->second)>>>($recv.begin(), $recv.end())"
+            "entries"   -> "([&]() { auto&& _c = $recv; return vector<pair<decay_t<decltype(_c.begin()->first)>, decay_t<decltype(_c.begin()->second)>>>(_c.begin(), _c.end()); }())"
             "second"    -> "$recv.second"
             "key"       -> "$recv.first"
             "value"     -> "$recv.second"
-            else        -> if (safe) "($recv != nullptr ? $recv->${expr.name} : /* null */{})"
+            else        -> if (safe) "([&]() { auto&& _c = $recv; return _c != nullptr ? _c->${expr.name} : /* null */{}; }())"
                            else "$recv.${expr.name}"
         }
     }
@@ -1015,7 +1015,7 @@ class CodeGenerator(val config: Config = Config.default) {
                 if (expr.left is IndexAccess) {
                     val receiver = genExpr((expr.left as IndexAccess).receiver)
                     val index = genExpr((expr.left as IndexAccess).index)
-                    "($receiver.count($index) ? $receiver[$index] : $r)"
+                    "([&]() { auto&& _c = $receiver; auto&& _k = $index; return _c.count(_k) ? _c[_k] : $r; }())"
                 } else {
                     "($l != nullptr ? $l : $r)"
                 }
@@ -1073,7 +1073,7 @@ class CodeGenerator(val config: Config = Config.default) {
         if (left is IndexAccess) {
             val receiver = genExpr(left.receiver)
             val index = genExpr(left.index)
-            return "($receiver.count($index) ? $receiver[$index] : $right)"
+            return "([&]() { auto&& _c = $receiver; auto&& _k = $index; return _c.count(_k) ? _c[_k] : $right; }())"
         }
         // General case: keep nullptr check for nullable types
         val leftCpp = genExpr(left)
@@ -1607,9 +1607,9 @@ class CodeGenerator(val config: Config = Config.default) {
     fun genMap(receiver: String, lambda: LambdaExpression, indexed: Boolean = false): String {
         val elemVar = lambda.params.getOrNull(0)?.name?.let { if (it == "it") "_it" else it } ?: "_it"
         val transform = genLambdaAsCppLambda(lambda)
-        return "[&]() { auto _r = vector<decay_t<decltype($transform($receiver.front()))>>(); " +
-               "_r.reserve($receiver.size()); " +
-               "for (auto& $elemVar : $receiver) _r.push_back($transform($elemVar)); " +
+        return "[&]() { auto&& _c = $receiver; auto _r = vector<decay_t<decltype($transform(_c.front()))>>(); " +
+               "_r.reserve(_c.size()); " +
+               "for (auto& $elemVar : _c) _r.push_back($transform($elemVar)); " +
                "return _r; }()"
     }
 
@@ -1617,45 +1617,45 @@ class CodeGenerator(val config: Config = Config.default) {
         val elemVar = lambda.params.getOrNull(0)?.name?.let { if (it == "it") "_it" else it } ?: "_it"
         val pred = genLambdaAsCppLambda(lambda)
         val check = if (negated) "!$pred($elemVar)" else "$pred($elemVar)"
-        return "[&]() { auto _r = vector<decay_t<decltype($receiver.front())>>(); " +
-               "for (auto& $elemVar : $receiver) if ($check) _r.push_back($elemVar); " +
+        return "[&]() { auto&& _c = $receiver; auto _r = vector<decay_t<decltype(_c.front())>>(); " +
+               "for (auto& $elemVar : _c) if ($check) _r.push_back($elemVar); " +
                "return _r; }()"
     }
 
     fun genAny(receiver: String, lambda: LambdaExpression): String {
         val pred = genLambdaAsCppLambda(lambda)
-        return "any_of($receiver.begin(), $receiver.end(), $pred)"
+        return "([&]() { auto&& _c = $receiver; return any_of(_c.begin(), _c.end(), $pred); }())"
     }
 
     fun genAll(receiver: String, lambda: LambdaExpression): String {
         val pred = genLambdaAsCppLambda(lambda)
-        return "all_of($receiver.begin(), $receiver.end(), $pred)"
+        return "([&]() { auto&& _c = $receiver; return all_of(_c.begin(), _c.end(), $pred); }())"
     }
 
     fun genNone(receiver: String, lambda: LambdaExpression): String {
         val pred = genLambdaAsCppLambda(lambda)
-        return "none_of($receiver.begin(), $receiver.end(), $pred)"
+        return "([&]() { auto&& _c = $receiver; return none_of(_c.begin(), _c.end(), $pred); }())"
     }
 
     fun genCountIf(receiver: String, lambda: LambdaExpression): String {
         val pred = genLambdaAsCppLambda(lambda)
-        return "(int)count_if($receiver.begin(), $receiver.end(), $pred)"
+        return "([&]() { auto&& _c = $receiver; return (int)count_if(_c.begin(), _c.end(), $pred); }())"
     }
 
     fun genFirstIf(receiver: String, lambda: LambdaExpression): String {
         val pred = genLambdaAsCppLambda(lambda)
-        return "(*find_if($receiver.begin(), $receiver.end(), $pred))"
+        return "([&]() { auto&& _c = $receiver; return (*find_if(_c.begin(), _c.end(), $pred)); }())"
     }
 
     fun genLastIf(receiver: String, lambda: LambdaExpression): String {
         val pred = genLambdaAsCppLambda(lambda)
-        return "(*find_if($receiver.rbegin(), $receiver.rend(), $pred))"
+        return "([&]() { auto&& _c = $receiver; return (*find_if(_c.rbegin(), _c.rend(), $pred)); }())"
     }
 
     fun genReduce(receiver: String, lambda: LambdaExpression): String {
         val f = genLambdaAsCppLambda(lambda)
-        return "[&]() { auto _r = $receiver.front(); " +
-               "for (int _i = 1; _i < (int)$receiver.size(); _i++) _r = $f(_r, $receiver[_i]); " +
+        return "[&]() { auto&& _c = $receiver; auto _r = _c.front(); " +
+               "for (int _i = 1; _i < (int)_c.size(); _i++) _r = $f(_r, _c[_i]); " +
                "return _r; }()"
     }
 
@@ -1668,15 +1668,15 @@ class CodeGenerator(val config: Config = Config.default) {
 
     fun genFlatMap(receiver: String, lambda: LambdaExpression): String {
         val f = genLambdaAsCppLambda(lambda)
-        return "[&]() { auto _r = vector<decay_t<decltype($f($receiver.front()).front())>>(); " +
-               "for (auto& _x : $receiver) { auto _sub = $f(_x); _r.insert(_r.end(), _sub.begin(), _sub.end()); } " +
+        return "[&]() { auto&& _c = $receiver; auto _r = vector<decay_t<decltype($f(_c.front()).front())>>(); " +
+               "for (auto& _x : _c) { auto _sub = $f(_x); _r.insert(_r.end(), _sub.begin(), _sub.end()); } " +
                "return _r; }()"
     }
 
     fun genMapNotNull(receiver: String, lambda: LambdaExpression): String {
         val f = genLambdaAsCppLambda(lambda)
-        return "[&]() { auto _r = vector<remove_pointer_t<decltype($f($receiver.front()))>>(); " +
-               "for (auto& _x : $receiver) { auto _v = $f(_x); if (_v != nullptr) _r.push_back(*_v); } " +
+        return "[&]() { auto&& _c = $receiver; auto _r = vector<remove_pointer_t<decltype($f(_c.front()))>>(); " +
+               "for (auto& _x : _c) { auto _v = $f(_x); if (_v != nullptr) _r.push_back(*_v); } " +
                "return _r; }()"
     }
 

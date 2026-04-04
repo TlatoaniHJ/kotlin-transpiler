@@ -267,7 +267,7 @@ object StdlibMapper {
             "contains"     -> if (args.size == 1) "$receiver.find(${arg(0)}) != string::npos" else null
             "startsWith"   -> if (args.size == 1) "($receiver.rfind(${arg(0)}, 0) == 0)" else null
             "endsWith"     -> if (args.size == 1)
-                                  "($receiver.size() >= ${arg(0)}.size() && $receiver.substr($receiver.size()-${arg(0)}.size()) == ${arg(0)})"
+                                  "([&]() { auto&& _c = $receiver; auto&& _s = ${arg(0)}; return _c.size() >= _s.size() && _c.substr(_c.size()-_s.size()) == _s; }())"
                               else null
             "substring"    -> if (args.size == 1) "$receiver.substr(${arg(0)})"
                               else if (args.size == 2) "$receiver.substr(${arg(0)}, ${arg(1)}-${arg(0)})"
@@ -296,40 +296,40 @@ object StdlibMapper {
             "get"        -> if (args.size == 1) "$receiver[${arg(0)}]" else null
             "set"        -> if (args.size == 2) "$receiver[${arg(0)}] = ${arg(1)}" else null
             "getOrElse"  -> if (args.size == 1 && trailingLambda != null)
-                                "(${arg(0)} < (int)$receiver.size() ? $receiver[${arg(0)}] : ${gen.genLambdaBody(trailingLambda)}(${arg(0)}))"
+                                "([&]() { auto&& _c = $receiver; auto _k = ${arg(0)}; return _k < (int)_c.size() ? _c[_k] : ${gen.genLambdaBody(trailingLambda)}(_k); }())"
                             else null
-            "getOrDefault" -> if (args.size == 2) "($receiver.count(${arg(0)}) ? $receiver.at(${arg(0)}) : ${arg(1)})" else null
+            "getOrDefault" -> if (args.size == 2) "([&]() { auto&& _c = $receiver; auto _k = ${arg(0)}; return _c.count(_k) ? _c.at(_k) : ${arg(1)}; }())" else null
 
             // ── List mutation ─────────────────────────────────────────────────
             "add"        -> when (args.size) {
                 1 -> { gen.markDirty(); "$receiver.push_back(${arg(0)})" }
-                2 -> { gen.markDirty(); "$receiver.insert($receiver.begin() + ${arg(0)}, ${arg(1)})" }
+                2 -> { gen.markDirty(); "([&]() { auto&& _c = $receiver; _c.insert(_c.begin() + ${arg(0)}, ${arg(1)}); }())" }
                 else -> null
             }
             "addAll"     -> if (args.size == 1)
-                                "$receiver.insert($receiver.end(), ${arg(0)}.begin(), ${arg(0)}.end())"
+                                "([&]() { auto&& _c = $receiver; _c.insert(_c.end(), ${arg(0)}.begin(), ${arg(0)}.end()); }())"
                             else null
-            "removeAt"   -> if (args.size == 1) "$receiver.erase($receiver.begin() + ${arg(0)})" else null
+            "removeAt"   -> if (args.size == 1) "([&]() { auto&& _c = $receiver; _c.erase(_c.begin() + ${arg(0)}); }())" else null
             "remove"     -> when (args.size) {
-                0 -> "([&]() { auto _v = $receiver.top(); $receiver.pop(); return _v; }())"
-                1 -> "{ auto _it = find($receiver.begin(), $receiver.end(), ${arg(0)}); if (_it != $receiver.end()) $receiver.erase(_it); }"
+                0 -> "([&]() { auto&& _c = $receiver; auto _v = _c.top(); _c.pop(); return _v; }())"
+                1 -> "([&]() { auto&& _c = $receiver; auto _it = find(_c.begin(), _c.end(), ${arg(0)}); if (_it != _c.end()) _c.erase(_it); }())"
                 else -> null
             }
             "removeAll"  -> null
-            "removeLast" -> "([&]() { auto _v = $receiver.back(); $receiver.pop_back(); return _v; }())"
-            "removeFirst"-> "([&]() { auto _v = $receiver.front(); $receiver.erase($receiver.begin()); return _v; }())"
+            "removeLast" -> "([&]() { auto&& _c = $receiver; auto _v = _c.back(); _c.pop_back(); return _v; }())"
+            "removeFirst"-> "([&]() { auto&& _c = $receiver; auto _v = _c.front(); _c.erase(_c.begin()); return _v; }())"
 
             // ── Stack-like (deque / ArrayDeque) ───────────────────────────────
             "addFirst", "push", "addLast" -> when (method) {
                 "addFirst", "push" -> "$receiver.push_front(${arg(0)})"
                 else               -> "$receiver.push_back(${arg(0)})"
             }
-            "removeFirst", "pollFirst", "pop" -> "$receiver.pop_front(); $receiver.front()"
-            "removeLast", "pollLast"           -> "$receiver.pop_back(); $receiver.back()"
+            "removeFirst", "pollFirst", "pop" -> "([&]() { auto&& _c = $receiver; _c.pop_front(); return _c.front(); }())"
+            "removeLast", "pollLast"           -> "([&]() { auto&& _c = $receiver; _c.pop_back(); return _c.back(); }())"
             "peekFirst"  -> "$receiver.front()"
             "peekLast"   -> "$receiver.back()"
             "peek"       -> "$receiver.top()"   // stack / priority_queue
-            "poll"       -> "($receiver.top(); $receiver.pop())"
+            "poll"       -> "([&]() { auto&& _c = $receiver; auto _v = _c.top(); _c.pop(); return _v; }())"
             "offer"      -> "$receiver.push(${arg(0)})"
 
             // ── Common collection ops ─────────────────────────────────────────
@@ -340,55 +340,52 @@ object StdlibMapper {
             "containsKey"-> if (args.size == 1) "($receiver.count(${arg(0)}) > 0)" else null
             "containsValue" -> null
             "subList"    -> if (args.size == 2)
-                                "vector<decay_t<decltype($receiver.front())>>($receiver.begin() + ${arg(0)}, $receiver.begin() + ${arg(1)})"
+                                "([&]() { auto&& _c = $receiver; return vector<decay_t<decltype(_c.front())>>(_c.begin() + ${arg(0)}, _c.begin() + ${arg(1)}); }())"
                             else null
-            "toList", "toMutableList" -> "vector<decay_t<decltype($receiver.front())>>($receiver.begin(), $receiver.end())"
-            "toSet"      -> "set<decay_t<decltype($receiver.front())>>($receiver.begin(), $receiver.end())"
-            "toIntArray" -> "vector<int>($receiver.begin(), $receiver.end())"
-            "toLongArray"-> "vector<long long>($receiver.begin(), $receiver.end())"
-            "reversed"   -> "vector<decay_t<decltype($receiver.front())>>($receiver.rbegin(), $receiver.rend())"
-            "asReversed" -> "vector<decay_t<decltype($receiver.front())>>($receiver.rbegin(), $receiver.rend())"
+            "toList", "toMutableList" -> "([&]() { auto&& _c = $receiver; return vector<decay_t<decltype(_c.front())>>(_c.begin(), _c.end()); }())"
+            "toSet"      -> "([&]() { auto&& _c = $receiver; return set<decay_t<decltype(_c.front())>>(_c.begin(), _c.end()); }())"
+            "toIntArray" -> "([&]() { auto&& _c = $receiver; return vector<int>(_c.begin(), _c.end()); }())"
+            "toLongArray"-> "([&]() { auto&& _c = $receiver; return vector<long long>(_c.begin(), _c.end()); }())"
+            "reversed"   -> "([&]() { auto&& _c = $receiver; return vector<decay_t<decltype(_c.front())>>(_c.rbegin(), _c.rend()); }())"
+            "asReversed" -> "([&]() { auto&& _c = $receiver; return vector<decay_t<decltype(_c.front())>>(_c.rbegin(), _c.rend()); }())"
 
             // ── Map ops ───────────────────────────────────────────────────────
             "put"        -> if (args.size == 2) "$receiver[${arg(0)}] = ${arg(1)}" else null
             "putAll"     -> if (args.size == 1) "$receiver.insert(${arg(0)}.begin(), ${arg(0)}.end())" else null
             "getOrPut"   -> if (args.size == 1 && trailingLambda != null)
-                                "([&]() -> auto& { auto _k = ${arg(0)}; if (!$receiver.count(_k)) $receiver[_k] = ${gen.genLambdaBody(trailingLambda)}(); return $receiver[_k]; }())"
+                                "([&]() -> auto& { auto&& _c = $receiver; auto _k = ${arg(0)}; if (!_c.count(_k)) _c[_k] = ${gen.genLambdaBody(trailingLambda)}(); return _c[_k]; }())"
                             else null
             "keys"       -> null  // complex
             "values"     -> null
-            "entries"    -> "vector<pair<decay_t<decltype($receiver.begin()->first)>, decay_t<decltype($receiver.begin()->second)>>>($receiver.begin(), $receiver.end())"
+            "entries"    -> "([&]() { auto&& _c = $receiver; return vector<pair<decay_t<decltype(_c.begin()->first)>, decay_t<decltype(_c.begin()->second)>>>(_c.begin(), _c.end()); }())"
 
             // ── TreeSet navigation ────────────────────────────────────────────
-            "lower"      -> "([&]() { auto _it = $receiver.lower_bound(${arg(0)}); return _it == $receiver.begin() ? /* no lower */ *_it : *prev(_it); }())"
-            "floor"      -> "([&]() { auto _it = $receiver.upper_bound(${arg(0)}); return _it == $receiver.begin() ? /* no floor */ *_it : *prev(_it); }())"
+            "lower"      -> "([&]() { auto&& _c = $receiver; auto _it = _c.lower_bound(${arg(0)}); return _it == _c.begin() ? /* no lower */ *_it : *prev(_it); }())"
+            "floor"      -> "([&]() { auto&& _c = $receiver; auto _it = _c.upper_bound(${arg(0)}); return _it == _c.begin() ? /* no floor */ *_it : *prev(_it); }())"
             "higher"     -> "(*$receiver.upper_bound(${arg(0)}))"
             "ceiling"    -> "(*$receiver.lower_bound(${arg(0)}))"
-            "lowerKey"   -> "([&]() { auto _it = $receiver.lower_bound(${arg(0)}); return _it == $receiver.begin() ? /* no lower */ _it->first : prev(_it)->first; }())"
-            "floorKey"   -> "([&]() { auto _it = $receiver.upper_bound(${arg(0)}); return _it == $receiver.begin() ? /* no floor */ _it->first : prev(_it)->first; }())"
+            "lowerKey"   -> "([&]() { auto&& _c = $receiver; auto _it = _c.lower_bound(${arg(0)}); return _it == _c.begin() ? /* no lower */ _it->first : prev(_it)->first; }())"
+            "floorKey"   -> "([&]() { auto&& _c = $receiver; auto _it = _c.upper_bound(${arg(0)}); return _it == _c.begin() ? /* no floor */ _it->first : prev(_it)->first; }())"
             "higherKey"  -> "($receiver.upper_bound(${arg(0)})->first)"
             "ceilingKey" -> "($receiver.lower_bound(${arg(0)})->first)"
-            "lowerEntry" -> "([&]() { auto _it = $receiver.lower_bound(${arg(0)}); return _it == $receiver.begin() ? /* no lower */ *_it : *prev(_it); }())"
-            "floorEntry" -> "([&]() { auto _it = $receiver.upper_bound(${arg(0)}); return _it == $receiver.begin() ? /* no floor */ *_it : *prev(_it); }())"
+            "lowerEntry" -> "([&]() { auto&& _c = $receiver; auto _it = _c.lower_bound(${arg(0)}); return _it == _c.begin() ? /* no lower */ *_it : *prev(_it); }())"
+            "floorEntry" -> "([&]() { auto&& _c = $receiver; auto _it = _c.upper_bound(${arg(0)}); return _it == _c.begin() ? /* no floor */ *_it : *prev(_it); }())"
             "higherEntry"-> "(*$receiver.upper_bound(${arg(0)}))"
             "ceilingEntry"-> "(*$receiver.lower_bound(${arg(0)}))"
             "headSet", "tailSet", "subSet" -> null
 
             // ── Sort (12 variants) ────────────────────────────────────────────
-            "sort"            -> "$receiver.sort($receiver.begin(), $receiver.end())".also {
-                // actually for vector: std::sort
-                return "sort($receiver.begin(), $receiver.end())"
-            }
-            "sortDescending"  -> "sort($receiver.begin(), $receiver.end(), greater<decay_t<decltype($receiver.front())>>())"
+            "sort"            -> "([&]() { auto&& _c = $receiver; sort(_c.begin(), _c.end()); }())"
+            "sortDescending"  -> "([&]() { auto&& _c = $receiver; sort(_c.begin(), _c.end(), greater<decay_t<decltype(_c.front())>>()); }())"
             "sortBy"          -> if (trailingLambda != null) {
                 val key = gen.genLambdaBody(trailingLambda)
-                "sort($receiver.begin(), $receiver.end(), [&](const auto& _a, const auto& _b) { return $key(_a) < $key(_b); })"
+                "([&]() { auto&& _c = $receiver; sort(_c.begin(), _c.end(), [&](const auto& _a, const auto& _b) { return $key(_a) < $key(_b); }); }())"
             } else null
             "sortByDescending"-> if (trailingLambda != null) {
                 val key = gen.genLambdaBody(trailingLambda)
-                "sort($receiver.begin(), $receiver.end(), [&](const auto& _a, const auto& _b) { return $key(_a) > $key(_b); })"
+                "([&]() { auto&& _c = $receiver; sort(_c.begin(), _c.end(), [&](const auto& _a, const auto& _b) { return $key(_a) > $key(_b); }); }())"
             } else null
-            "sortWith"        -> if (args.size == 1) "sort($receiver.begin(), $receiver.end(), ${arg(0)})" else null
+            "sortWith"        -> if (args.size == 1) "([&]() { auto&& _c = $receiver; sort(_c.begin(), _c.end(), ${arg(0)}); }())" else null
             "sorted"          -> "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end()); return _v; }()"
             "sortedDescending"-> "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end(), greater<decay_t<decltype(_v.front())>>()); return _v; }()"
             "sortedBy"        -> {
@@ -436,22 +433,22 @@ object StdlibMapper {
             "zip"       -> if (args.size == 1)
                 "[&]() { auto& _a = $receiver; auto& _b = ${arg(0)}; auto _n = min(_a.size(), _b.size()); vector<pair<decltype(_a[0]), decltype(_b[0])>> _r(_n); for (int _i = 0; _i < (int)_n; _i++) _r[_i] = {_a[_i], _b[_i]}; return _r; }()"
                 else null
-            "take"      -> if (args.size == 1) "vector<decay_t<decltype($receiver.front())>>($receiver.begin(), $receiver.begin() + min((int)${arg(0)}, (int)$receiver.size()))" else null
-            "drop"      -> if (args.size == 1) "vector<decay_t<decltype($receiver.front())>>($receiver.begin() + min((int)${arg(0)}, (int)$receiver.size()), $receiver.end())" else null
-            "sum"       -> if (args.isEmpty()) "accumulate($receiver.begin(), $receiver.end(), decay_t<decltype($receiver.front())>(0))" else null
+            "take"      -> if (args.size == 1) "([&]() { auto&& _c = $receiver; return vector<decay_t<decltype(_c.front())>>(_c.begin(), _c.begin() + min((int)${arg(0)}, (int)_c.size())); }())" else null
+            "drop"      -> if (args.size == 1) "([&]() { auto&& _c = $receiver; return vector<decay_t<decltype(_c.front())>>(_c.begin() + min((int)${arg(0)}, (int)_c.size()), _c.end()); }())" else null
+            "sum"       -> if (args.isEmpty()) "([&]() { auto&& _c = $receiver; return accumulate(_c.begin(), _c.end(), decay_t<decltype(_c.front())>(0)); }())" else null
             "sumOf"     -> if (trailingLambda != null) {
                 val lam = gen.genLambdaAsCppLambda(trailingLambda)
-                "accumulate($receiver.begin(), $receiver.end(), 0LL, [&](auto _s, auto& _x) { return _s + $lam(_x); })"
+                "([&]() { auto&& _c = $receiver; return accumulate(_c.begin(), _c.end(), 0LL, [&](auto _s, auto& _x) { return _s + $lam(_x); }); }())"
             } else null
-            "maxOrNull", "max" -> "(*max_element($receiver.begin(), $receiver.end()))"
-            "minOrNull", "min" -> "(*min_element($receiver.begin(), $receiver.end()))"
+            "maxOrNull", "max" -> "([&]() { auto&& _c = $receiver; return (*max_element(_c.begin(), _c.end())); }())"
+            "minOrNull", "min" -> "([&]() { auto&& _c = $receiver; return (*min_element(_c.begin(), _c.end())); }())"
             "maxByOrNull", "maxBy" -> if (trailingLambda != null) {
                 val key = gen.genLambdaBody(trailingLambda)
-                "(*max_element($receiver.begin(), $receiver.end(), [&](const auto& _a, const auto& _b) { return $key(_a) < $key(_b); }))"
+                "([&]() { auto&& _c = $receiver; return (*max_element(_c.begin(), _c.end(), [&](const auto& _a, const auto& _b) { return $key(_a) < $key(_b); })); }())"
             } else null
             "minByOrNull", "minBy" -> if (trailingLambda != null) {
                 val key = gen.genLambdaBody(trailingLambda)
-                "(*min_element($receiver.begin(), $receiver.end(), [&](const auto& _a, const auto& _b) { return $key(_a) < $key(_b); }))"
+                "([&]() { auto&& _c = $receiver; return (*min_element(_c.begin(), _c.end(), [&](const auto& _a, const auto& _b) { return $key(_a) < $key(_b); })); }())"
             } else null
             "joinToString" -> {
                 val sep = if (args.isNotEmpty()) arg(0) else "\"\""

@@ -891,9 +891,36 @@ class CodeGenerator(val config: Config = Config.default) {
         }
     }
 
+    /** Wraps the expression in parentheses if it's a binary expression with different precedence. */
+    private fun parenIfBinary(child: Expression, parentOp: BinaryOp): String {
+        val raw = genExpr(child)
+        if (child !is BinaryExpression) return raw
+        val childPrec = opPrecedence(child.op)
+        val parentPrec = opPrecedence(parentOp)
+        // Parenthesize if child has strictly lower precedence, or if same precedence
+        // but different operator (e.g. + vs - at same level is fine, but mixing
+        // additive with multiplicative needs parens)
+        return if (childPrec < parentPrec) "($raw)" else raw
+    }
+
+    private fun opPrecedence(op: BinaryOp): Int = when (op) {
+        BinaryOp.Or -> 1
+        BinaryOp.And -> 2
+        BinaryOp.Eq, BinaryOp.NotEq, BinaryOp.RefEq, BinaryOp.RefNotEq -> 3
+        BinaryOp.Lt, BinaryOp.Gt, BinaryOp.LtEq, BinaryOp.GtEq -> 4
+        BinaryOp.RangeTo, BinaryOp.RangeUntil -> 5
+        BinaryOp.Plus, BinaryOp.Minus -> 6
+        BinaryOp.Times, BinaryOp.Div, BinaryOp.Mod -> 7
+        BinaryOp.Shl, BinaryOp.Shr, BinaryOp.Ushr -> 5
+        BinaryOp.BitAnd -> 5
+        BinaryOp.BitOr -> 5
+        BinaryOp.BitXor -> 5
+        BinaryOp.Elvis -> 0
+    }
+
     private fun genBinaryExpr(expr: BinaryExpression): String {
-        val l = genExpr(expr.left)
-        val r = genExpr(expr.right)
+        val l = parenIfBinary(expr.left, expr.op)
+        val r = parenIfBinary(expr.right, expr.op)
         return when (expr.op) {
             BinaryOp.Plus    -> "$l + $r"
             BinaryOp.Minus   -> "$l - $r"
@@ -1394,7 +1421,9 @@ class CodeGenerator(val config: Config = Config.default) {
             if (it == "it") "_it" else it
         } ?: "_i"
         val sub = createSubGenerator()
-        sub.emit("for (int $indexVar = 0; $indexVar < $n; $indexVar++) {")
+        // Evaluate n once to avoid re-evaluating expressions with side effects (e.g. nextInt())
+        sub.emit("auto _n = $n;")
+        sub.emit("for (int $indexVar = 0; $indexVar < _n; $indexVar++) {")
         sub.indent { lambda.body.forEach { sub.genStatement(it) } }
         sub.emit("}")
         return "[&]() { ${sub.out.toString().trimEnd()} }()"

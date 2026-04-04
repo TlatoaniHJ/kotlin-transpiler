@@ -63,3 +63,30 @@ class BinaryIndexTree(val treeFrom: Int, treeTo: Int) {
 
     operator fun get(from: Int, to: Int) = if (to < from) 0L else query(to) - query(from - 1)
 }
+
+
+/*
+
+Sample:
+16
+31 32
+3 26
+17 19
+4 24
+1 28
+15 21
+12 16
+18 29
+20 23
+7 8
+11 14
+9 22
+6 30
+5 10
+25 27
+2 13
+6
+3 8 2 5 12 11
+
+
+ */

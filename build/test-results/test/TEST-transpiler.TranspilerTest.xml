@@ -1,25 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="transpiler.TranspilerTest" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-04-04T20:32:00" hostname="Dannys-MBP-3" time="90.729">
+<testsuite name="transpiler.TranspilerTest" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-04-04T21:53:54" hostname="Dannys-MBP-3" time="115.733">
   <properties/>
-  <testcase name="arithmetic" classname="transpiler.TranspilerTest" time="4.95"/>
-  <testcase name="basic_io" classname="transpiler.TranspilerTest" time="4.239"/>
-  <testcase name="classes" classname="transpiler.TranspilerTest" time="4.513"/>
-  <testcase name="data_classes" classname="transpiler.TranspilerTest" time="4.987"/>
-  <testcase name="destructuring" classname="transpiler.TranspilerTest" time="4.794"/>
-  <testcase name="example_deformed_balance" classname="transpiler.TranspilerTest" time="4.872"/>
-  <testcase name="example_dropshipping" classname="transpiler.TranspilerTest" time="4.969"/>
-  <testcase name="example_jaimes_palace" classname="transpiler.TranspilerTest" time="4.955"/>
-  <testcase name="example_omkar_time_travel" classname="transpiler.TranspilerTest" time="5.356"/>
-  <testcase name="if_when" classname="transpiler.TranspilerTest" time="4.453"/>
-  <testcase name="labeled_breaks" classname="transpiler.TranspilerTest" time="4.454"/>
-  <testcase name="lambdas" classname="transpiler.TranspilerTest" time="4.774"/>
-  <testcase name="lists" classname="transpiler.TranspilerTest" time="4.923"/>
-  <testcase name="loops" classname="transpiler.TranspilerTest" time="4.573"/>
-  <testcase name="maps" classname="transpiler.TranspilerTest" time="5.015"/>
-  <testcase name="nested_functions" classname="transpiler.TranspilerTest" time="4.444"/>
-  <testcase name="sorting" classname="transpiler.TranspilerTest" time="5.264"/>
-  <testcase name="string_templates" classname="transpiler.TranspilerTest" time="4.413"/>
-  <testcase name="treeset_treemap" classname="transpiler.TranspilerTest" time="4.762"/>
+  <testcase name="arithmetic" classname="transpiler.TranspilerTest" time="5.103"/>
+  <testcase name="basic_io" classname="transpiler.TranspilerTest" time="4.331"/>
+  <testcase name="classes" classname="transpiler.TranspilerTest" time="4.753"/>
+  <testcase name="data_classes" classname="transpiler.TranspilerTest" time="5.075"/>
+  <testcase name="destructuring" classname="transpiler.TranspilerTest" time="5.053"/>
+  <testcase name="example_deformed_balance" classname="transpiler.TranspilerTest" time="5.224"/>
+  <testcase name="example_desktop_rearrangement" classname="transpiler.TranspilerTest" time="5.163"/>
+  <testcase name="example_dropshipping" classname="transpiler.TranspilerTest" time="4.973"/>
+  <testcase name="example_interesting_problem" classname="transpiler.TranspilerTest" time="5.455"/>
+  <testcase name="example_jaimes_palace" classname="transpiler.TranspilerTest" time="5.013"/>
+  <testcase name="example_omkar_time_travel" classname="transpiler.TranspilerTest" time="5.647"/>
+  <testcase name="example_rainbow_branch" classname="transpiler.TranspilerTest" time="6.157"/>
+  <testcase name="example_sub_mst" classname="transpiler.TranspilerTest" time="5.699"/>
+  <testcase name="if_when" classname="transpiler.TranspilerTest" time="4.439"/>
+  <testcase name="labeled_breaks" classname="transpiler.TranspilerTest" time="4.482"/>
+  <testcase name="lambdas" classname="transpiler.TranspilerTest" time="5.009"/>
+  <testcase name="lists" classname="transpiler.TranspilerTest" time="5.011"/>
+  <testcase name="loops" classname="transpiler.TranspilerTest" time="4.634"/>
+  <testcase name="maps" classname="transpiler.TranspilerTest" time="5.082"/>
+  <testcase name="nested_functions" classname="transpiler.TranspilerTest" time="4.593"/>
+  <testcase name="sorting" classname="transpiler.TranspilerTest" time="5.488"/>
+  <testcase name="string_templates" classname="transpiler.TranspilerTest" time="4.283"/>
+  <testcase name="treeset_treemap" classname="transpiler.TranspilerTest" time="5.043"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

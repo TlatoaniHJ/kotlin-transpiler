@@ -6,15 +6,18 @@ import java.io.File
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
-    val (inputPath, outputPath, config) = parseArgs(args)
+    val (inputPath, inlineSource, outputPath, config) = parseArgs(args)
 
-    val inputFile = File(inputPath)
-    if (!inputFile.exists()) {
-        System.err.println("Error: input file not found: $inputPath")
-        exitProcess(1)
+    val source = if (inlineSource != null) {
+        inlineSource
+    } else {
+        val inputFile = File(inputPath!!)
+        if (!inputFile.exists()) {
+            System.err.println("Error: input file not found: $inputPath")
+            exitProcess(1)
+        }
+        inputFile.readText()
     }
-
-    val source = inputFile.readText()
 
     val ast = try {
         KotlinTranspilerParser.parse(source)
@@ -42,7 +45,8 @@ fun main(args: Array<String>) {
 }
 
 private data class ParsedArgs(
-    val inputPath: String,
+    val inputPath: String?,
+    val inlineSource: String?,
     val outputPath: String,
     val config: Config
 )
@@ -51,6 +55,7 @@ private fun parseArgs(args: Array<String>): ParsedArgs {
     if (args.isEmpty()) usage()
 
     var inputPath: String? = null
+    var inlineSource: String? = null
     var outputPath: String? = null
     var useUnorderedMap = false
 
@@ -59,6 +64,9 @@ private fun parseArgs(args: Array<String>): ParsedArgs {
         when (val arg = args[i]) {
             "-o", "--output" -> {
                 outputPath = args.getOrNull(++i) ?: usage()
+            }
+            "-e", "--eval" -> {
+                inlineSource = args.getOrNull(++i) ?: usage()
             }
             "--unordered-map" -> useUnorderedMap = true
             "--help", "-h"    -> usage()
@@ -70,17 +78,19 @@ private fun parseArgs(args: Array<String>): ParsedArgs {
         i++
     }
 
-    if (inputPath == null) usage()
+    if (inputPath == null && inlineSource == null) usage()
 
-    // Default output: same name with .cpp extension
+    // Default output: stdout for --eval, same name with .cpp extension for file input
     if (outputPath == null) {
-        outputPath = inputPath!!.removeSuffix(".kt") + ".cpp"
+        outputPath = if (inlineSource != null) "-"
+                     else inputPath!!.removeSuffix(".kt") + ".cpp"
     }
 
     return ParsedArgs(
-        inputPath  = inputPath!!,
-        outputPath = outputPath!!,
-        config     = Config(useUnorderedMapForMutableMapOf = useUnorderedMap)
+        inputPath    = inputPath,
+        inlineSource = inlineSource,
+        outputPath   = outputPath!!,
+        config       = Config(useUnorderedMapForMutableMapOf = useUnorderedMap)
     )
 }
 
@@ -91,6 +101,7 @@ private fun usage(): Nothing {
 
         Options:
           -o, --output <file>   Output file (default: input with .cpp extension)
+          -e, --eval <code>     Transpile inline Kotlin code and print C++ to stdout
           --unordered-map       Use std::unordered_map for mutableMapOf() (default: std::map)
           -h, --help            Show this help
 

@@ -32,8 +32,16 @@ object StdlibMapper {
 
         return when (name) {
             // Math
-            "max", "maxOf" -> if (args.size == 2) "max(${arg(0)}, ${arg(1)})" else null
-            "min", "minOf" -> if (args.size == 2) "min(${arg(0)}, ${arg(1)})" else null
+            "max", "maxOf" -> when (args.size) {
+                2 -> "max(${arg(0)}, ${arg(1)})"
+                3 -> "max({${arg(0)}, ${arg(1)}, ${arg(2)}})"
+                else -> if (args.size > 3) "max({${args.joinToString(", ") { gen.genExpr(it.value) }}})" else null
+            }
+            "min", "minOf" -> when (args.size) {
+                2 -> "min(${arg(0)}, ${arg(1)})"
+                3 -> "min({${arg(0)}, ${arg(1)}, ${arg(2)}})"
+                else -> if (args.size > 3) "min({${args.joinToString(", ") { gen.genExpr(it.value) }}})" else null
+            }
             "abs"          -> if (args.size == 1) "abs(${arg(0)})" else null
             "sqrt"         -> if (args.size == 1) "sqrt(${arg(0)})" else null
             "pow"          -> if (args.size == 2) "pow(${arg(0)}, ${arg(1)})" else null
@@ -268,12 +276,12 @@ object StdlibMapper {
                                   "[&]() { string _s = $receiver; size_t _p; while ((_p = _s.find(${arg(0)})) != string::npos) _s.replace(_p, ${arg(0)}.size(), ${arg(1)}); return _s; }()"
                               else null
             "split"        -> if (args.size == 1) null else null  // complex, skip
-            "toCharArray"  -> "vector<char>($receiver.begin(), $receiver.end())"
+            "toCharArray"  -> "[&]() { auto _s = $receiver; return vector<char>(_s.begin(), _s.end()); }()"
 
             // ── Collection size / access ──────────────────────────────────────
             "size"       -> "$receiver.size()"
-            "count"      -> if (args.isEmpty()) "(int)$receiver.size()"
-                            else if (trailingLambda != null) gen.genCountIf(receiver, trailingLambda)
+            "count"      -> if (trailingLambda != null) gen.genCountIf(receiver, trailingLambda)
+                            else if (args.isEmpty()) "(int)$receiver.size()"
                             else null
             "indices"    -> "(0 until (int)$receiver.size())"  // will be used in for loops
             "lastIndex"  -> "((int)$receiver.size() - 1)"
@@ -383,23 +391,31 @@ object StdlibMapper {
             "sortWith"        -> if (args.size == 1) "sort($receiver.begin(), $receiver.end(), ${arg(0)})" else null
             "sorted"          -> "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end()); return _v; }()"
             "sortedDescending"-> "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end(), greater<decay_t<decltype(_v.front())>>()); return _v; }()"
-            "sortedBy"        -> if (trailingLambda != null) {
-                val key = gen.genLambdaBody(trailingLambda)
-                "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end(), [&](const auto& _a, const auto& _b) { return $key(_a) < $key(_b); }); return _v; }()"
-            } else null
-            "sortedByDescending" -> if (trailingLambda != null) {
-                val key = gen.genLambdaBody(trailingLambda)
-                "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end(), [&](const auto& _a, const auto& _b) { return $key(_a) > $key(_b); }); return _v; }()"
-            } else null
+            "sortedBy"        -> {
+                val lam = trailingLambda ?: (args.lastOrNull()?.value as? LambdaExpression)
+                if (lam != null) {
+                    val key = gen.genLambdaBody(lam)
+                    "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end(), [&](const auto& _a, const auto& _b) { return $key(_a) < $key(_b); }); return _v; }()"
+                } else null
+            }
+            "sortedByDescending" -> {
+                val lam = trailingLambda ?: (args.lastOrNull()?.value as? LambdaExpression)
+                if (lam != null) {
+                    val key = gen.genLambdaBody(lam)
+                    "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end(), [&](const auto& _a, const auto& _b) { return $key(_a) > $key(_b); }); return _v; }()"
+                } else null
+            }
             "sortedWith"      -> if (args.size == 1) "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end(), ${arg(0)}); return _v; }()" else null
 
             // ── Functional ────────────────────────────────────────────────────
-            "map", "mapIndexed" -> if (trailingLambda != null)
-                gen.genMap(receiver, trailingLambda, indexed = method == "mapIndexed")
-                else null
-            "filter", "filterIndexed" -> if (trailingLambda != null)
-                gen.genFilter(receiver, trailingLambda, indexed = method == "filterIndexed")
-                else null
+            "map", "mapIndexed" -> {
+                val lam = trailingLambda ?: (args.lastOrNull()?.value as? LambdaExpression)
+                if (lam != null) gen.genMap(receiver, lam, indexed = method == "mapIndexed") else null
+            }
+            "filter", "filterIndexed" -> {
+                val lam = trailingLambda ?: (args.lastOrNull()?.value as? LambdaExpression)
+                if (lam != null) gen.genFilter(receiver, lam, indexed = method == "filterIndexed") else null
+            }
             "forEach", "forEachIndexed" -> if (trailingLambda != null)
                 gen.genForEach(receiver, trailingLambda, indexed = method == "forEachIndexed")
                 else null
@@ -422,7 +438,7 @@ object StdlibMapper {
                 else null
             "take"      -> if (args.size == 1) "vector<decay_t<decltype($receiver.front())>>($receiver.begin(), $receiver.begin() + min((int)${arg(0)}, (int)$receiver.size()))" else null
             "drop"      -> if (args.size == 1) "vector<decay_t<decltype($receiver.front())>>($receiver.begin() + min((int)${arg(0)}, (int)$receiver.size()), $receiver.end())" else null
-            "sum"       -> if (args.isEmpty()) "accumulate($receiver.begin(), $receiver.end(), decltype($receiver.front())(0))" else null
+            "sum"       -> if (args.isEmpty()) "accumulate($receiver.begin(), $receiver.end(), decay_t<decltype($receiver.front())>(0))" else null
             "sumOf"     -> if (trailingLambda != null) {
                 val lam = gen.genLambdaAsCppLambda(trailingLambda)
                 "accumulate($receiver.begin(), $receiver.end(), 0LL, [&](auto _s, auto& _x) { return _s + $lam(_x); })"
@@ -473,6 +489,11 @@ object StdlibMapper {
                 gen.markNeedsRandom()
                 "(rng() & 1)"
             }
+
+            // ── withIndex ─────────────────────────────────────────────────
+            "withIndex" -> if (args.isEmpty()) {
+                "[&]() { auto& _c = $receiver; vector<pair<int, decay_t<decltype(_c.front())>>> _r; for (int _i = 0; _i < (int)_c.size(); _i++) _r.push_back({_i, _c[_i]}); return _r; }()"
+            } else null
 
             else -> null
         }
@@ -540,6 +561,11 @@ object StdlibMapper {
         if (value is MethodCallExpression && value.method == "joinToString") {
             val sep = if (value.args.isNotEmpty()) gen.genExpr(value.args[0].value) else "\"\""
             return gen.genJoinToCout(gen.genExpr(value.receiver), sep, value.trailingLambda, newline)
+        }
+
+        // StringBuilder (ostringstream) needs .str() to be printable
+        if (value is NameReference && gen.isStringBuilderVar(value.name)) {
+            return "cout << ${gen.genExpr(value)}.str()$suffix"
         }
 
         return "cout << ${gen.genExpr(value)}$suffix"

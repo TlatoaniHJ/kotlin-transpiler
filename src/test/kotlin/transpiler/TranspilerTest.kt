@@ -72,7 +72,10 @@ class TranspilerTest {
             val kotlinSources = mutableListOf(ktFile.absolutePath)
             if (IO_PROVIDER.exists()) kotlinSources.add(IO_PROVIDER.absolutePath)
             val kotlinCompile = runProcess(
-                listOf("kotlinc") + kotlinSources + listOf("-include-runtime", "-d", jarFile.absolutePath),
+                listOf("kotlinc") + kotlinSources + listOf(
+                    "-include-runtime", "-d", jarFile.absolutePath,
+                    "-nowarn", "-language-version", "1.9", "-api-version", "1.9"
+                ),
                 workDir = tmpDir
             )
             if (kotlinCompile.exitCode != 0) {

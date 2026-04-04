@@ -39,6 +39,17 @@ class CodeGenerator(val config: Config = Config.default) {
     fun markDirty() {}          // no-op – reserved for future mutation tracking
     fun markNeedsRandom() { needsRandom = true }
 
+    // ─── Transpilation errors ─────────────────────────────────────────────────
+
+    private val errors = mutableListOf<String>()
+
+    /** Record a transpilation error and emit a C++ #error directive so compilation fails clearly. */
+    private fun emitError(msg: String): String {
+        errors.add(msg)
+        System.err.println("Transpiler warning: $msg")
+        return "/* TRANSPILER ERROR: $msg */ static_assert(false, \"$msg\")"
+    }
+
     // ─── Labeled-break support ────────────────────────────────────────────────
 
     // Maps Kotlin label name → C++ goto label name
@@ -54,6 +65,8 @@ class CodeGenerator(val config: Config = Config.default) {
 
     // Tracks variable names whose initializer is a StringBuilder (ostringstream)
     private val stringBuilderVars = mutableSetOf<String>()
+    /** Check if a variable name refers to a StringBuilder (ostringstream) */
+    fun isStringBuilderVar(name: String): Boolean = name in stringBuilderVars
 
     // Tracks variable names whose initializer is a set-like type (TreeSet, HashSet, etc.)
     private val setVars = mutableSetOf<String>()
@@ -229,8 +242,8 @@ class CodeGenerator(val config: Config = Config.default) {
         val isRecursive = fn.body != null && functionBodyReferencesName(fn.body, fn.name)
 
         // For recursive nested functions, use std::function instead of auto
-        val varDecl = if (isRecursive && fn.returnType != null) {
-            val retType = if (fn.returnType == KotlinType.Unit) "void" else typeToCpp(fn.returnType)
+        val varDecl = if (isRecursive) {
+            val retType = if (fn.returnType == null || fn.returnType == KotlinType.Unit) "void" else typeToCpp(fn.returnType)
             val paramTypes = fn.params.joinToString(", ") { p ->
                 if (p.type != null) typeToCpp(p.type) else "auto"
             }
@@ -502,6 +515,15 @@ class CodeGenerator(val config: Config = Config.default) {
         if (p.initializer != null && isUserClassInit(p.initializer)) {
             userClassVars.add(p.name)
         }
+        // Detect variable shadowing: `var n = n` in Kotlin is valid but `auto n = n;` in C++
+        // is self-referential. Skip the declaration — in C++ the outer variable (e.g. for-loop
+        // variable) is already mutable, so the shadowing copy is unnecessary.
+        val isSelfShadow = p.initializer is NameReference
+            && (p.initializer as NameReference).name == p.name
+        if (isSelfShadow) {
+            emit("// var ${p.name} = ${p.name} (self-shadow, skipped)")
+            return
+        }
         val init = if (p.initializer != null) " = ${genExpr(p.initializer)}" else ""
         // Kotlin val = immutable reference, but the object may be mutable (e.g. mutableListOf).
         // In C++ const prevents mutation of the object itself, so skip const for mutable containers.
@@ -577,6 +599,26 @@ class CodeGenerator(val config: Config = Config.default) {
      * types, strings, and simple immutable values — never to class instances whose internal
      * state may be mutated through methods.
      */
+    /** Returns true if the expression produces a list/vector (for detecting list concatenation with +). */
+    private fun isListExpression(expr: Expression): Boolean {
+        val listCallNames = setOf(
+            "listOf", "mutableListOf", "arrayListOf", "emptyList", "arrayOf",
+            "List", "MutableList", "Array",
+            "IntArray", "LongArray", "DoubleArray", "FloatArray", "BooleanArray", "CharArray",
+            "intArrayOf", "longArrayOf", "doubleArrayOf", "floatArrayOf", "booleanArrayOf", "charArrayOf"
+        )
+        return when (expr) {
+            is CallExpression -> expr.callee is NameReference && (expr.callee as NameReference).name in listCallNames
+            is MethodCallExpression -> expr.method in setOf(
+                "map", "filter", "sorted", "sortedBy", "sortedDescending", "sortedByDescending",
+                "sortedWith", "reversed", "toList", "toMutableList", "subList", "take", "drop",
+                "flatMap", "mapNotNull", "distinct", "zip"
+            )
+            is BinaryExpression -> expr.op == BinaryOp.Plus && (isListExpression(expr.left) || isListExpression(expr.right))
+            else -> false
+        }
+    }
+
     private fun isMutableContainerInit(expr: Expression): Boolean {
         val mutableCallNames = setOf(
             "mutableListOf", "mutableSetOf", "mutableMapOf", "arrayListOf",
@@ -914,15 +956,19 @@ class CodeGenerator(val config: Config = Config.default) {
     }
 
     /** Wraps the expression in parentheses if it's a binary expression with different precedence. */
-    private fun parenIfBinary(child: Expression, parentOp: BinaryOp): String {
+    private fun parenIfBinary(child: Expression, parentOp: BinaryOp, isRight: Boolean = false): String {
         val raw = genExpr(child)
         if (child !is BinaryExpression) return raw
         val childPrec = opPrecedence(child.op)
         val parentPrec = opPrecedence(parentOp)
-        // Parenthesize if child has strictly lower precedence, or if same precedence
-        // but different operator (e.g. + vs - at same level is fine, but mixing
-        // additive with multiplicative needs parens)
-        return if (childPrec < parentPrec) "($raw)" else raw
+        // Parenthesize if child has strictly lower precedence
+        if (childPrec < parentPrec) return "($raw)"
+        // For right operand of non-commutative operators (-, /, %), also parenthesize
+        // at same precedence: a - (b + c) != a - b + c
+        if (isRight && childPrec == parentPrec &&
+            parentOp in setOf(BinaryOp.Minus, BinaryOp.Div, BinaryOp.Mod))
+            return "($raw)"
+        return raw
     }
 
     private fun opPrecedence(op: BinaryOp): Int = when (op) {
@@ -941,10 +987,15 @@ class CodeGenerator(val config: Config = Config.default) {
     }
 
     private fun genBinaryExpr(expr: BinaryExpression): String {
-        val l = parenIfBinary(expr.left, expr.op)
-        val r = parenIfBinary(expr.right, expr.op)
+        val l = parenIfBinary(expr.left, expr.op, isRight = false)
+        val r = parenIfBinary(expr.right, expr.op, isRight = true)
         return when (expr.op) {
-            BinaryOp.Plus    -> "$l + $r"
+            BinaryOp.Plus    -> {
+                // Detect list concatenation: if either side looks like a list-producing expression
+                if (isListExpression(expr.left) || isListExpression(expr.right))
+                    "[&]() { auto _a = $l; auto _b = $r; _a.insert(_a.end(), _b.begin(), _b.end()); return _a; }()"
+                else "$l + $r"
+            }
             BinaryOp.Minus   -> "$l - $r"
             BinaryOp.Times   -> "$l * $r"
             BinaryOp.Div     -> "$l / $r"
@@ -1081,6 +1132,7 @@ class CodeGenerator(val config: Config = Config.default) {
                 when (pa.name) {
                     "toString" -> if (expr.args.isEmpty()) return "$sbRecv.str()"
                     "append" -> if (expr.args.size == 1) return "{ $sbRecv << ${genExpr(expr.args[0].value)}; }"
+                    "appendLine", "appendln" -> return if (expr.args.size == 1) "{ $sbRecv << ${genExpr(expr.args[0].value)} << '\\n'; }" else "{ $sbRecv << '\\n'; }"
                     "clear" -> if (expr.args.isEmpty()) return "$sbRecv.str(\"\")"
                 }
             }
@@ -1095,6 +1147,13 @@ class CodeGenerator(val config: Config = Config.default) {
                     "remove" -> if (expr.args.size == 1) return "$recv.erase(${genExpr(expr.args[0].value)})"
                     "contains" -> if (expr.args.size == 1) return "($recv.count(${genExpr(expr.args[0].value)}) > 0)"
                 }
+            }
+            // `x in collection` / `x !in collection` is parsed as collection.contains(x)
+            // Use .count() which works for maps, sets, and associative containers
+            if (pa.name == "contains" && expr.args.size == 1 && expr.typeArgs.isEmpty()) {
+                val recv = genExpr(pa.receiver)
+                val arg = genExpr(expr.args[0].value)
+                return "($recv.count($arg) > 0)"
             }
             // Skip stdlib method mapping for user-defined class instances
             if (isUserClassRecv) {
@@ -1131,7 +1190,10 @@ class CodeGenerator(val config: Config = Config.default) {
             "HashSet"       -> "unordered_set<${typeArg(0)}>($argsCpp)"
             "LinkedHashMap" -> "map<${typeArg(0)}, ${typeArg(1)}>($argsCpp)"
             "LinkedHashSet" -> "set<${typeArg(0)}>($argsCpp)"
-            "ArrayDeque"    -> "deque<${typeArg(0)}>($argsCpp)"
+            "ArrayDeque"    -> if (args.size == 1 && typeArgs.isEmpty()) {
+                val a = genExpr(args[0].value)
+                "[&]() { auto _v = $a; return deque<decay_t<decltype(_v.front())>>(_v.begin(), _v.end()); }()"
+            } else "deque<${typeArg(0)}>($argsCpp)"
             "PriorityQueue" -> {
                 val elem = typeArg(0)
                 if (args.isNotEmpty()) {
@@ -1171,6 +1233,7 @@ class CodeGenerator(val config: Config = Config.default) {
             when (expr.method) {
                 "toString" -> if (expr.args.isEmpty()) return "$recv.str()"
                 "append" -> if (expr.args.size == 1) return "{ $recv << ${genExpr(expr.args[0].value)}; }"
+                "appendLine", "appendln" -> return if (expr.args.size == 1) "{ $recv << ${genExpr(expr.args[0].value)} << '\\n'; }" else "{ $recv << '\\n'; }"
                 "clear" -> if (expr.args.isEmpty()) return "$recv.str(\"\")"
             }
         }
@@ -1225,7 +1288,70 @@ class CodeGenerator(val config: Config = Config.default) {
 
         val args = buildArgList(expr.args, expr.trailingLambda)
         val op = if (expr.isSafeCall) "->" else "."
-        return "$recv$op${expr.method}($args)"
+        // Emit error for Kotlin stdlib methods that weren't mapped
+        if (!isUserClassReceiver && isLikelyKotlinStdlibMethod(expr.method)) {
+            return emitError("Unsupported method: .${expr.method}()")
+        }
+        return "$recv$op${sanitizeName(expr.method)}($args)"
+    }
+
+    /** Heuristic: returns true if this method name looks like a Kotlin stdlib method
+     *  that should have been mapped but wasn't. */
+    private fun isLikelyKotlinStdlibMethod(method: String): Boolean {
+        val knownKotlinMethods = setOf(
+            "sumOf", "count", "map", "filter", "forEach", "forEachIndexed",
+            "mapIndexed", "filterIndexed", "flatMap", "mapNotNull", "filterNot",
+            "any", "all", "none", "reduce", "fold", "groupBy", "partition",
+            "associateBy", "associateWith", "associate",
+            "sortBy", "sortByDescending", "sortWith",
+            "sortedBy", "sortedByDescending", "sortedWith",
+            "maxByOrNull", "minByOrNull", "maxBy", "minBy",
+            "joinToString", "withIndex",
+            "toInt", "toLong", "toDouble", "toFloat", "toString", "toChar",
+            "toByte", "toShort", "toBigInteger", "toBigDecimal",
+            "toList", "toMutableList", "toSet", "toMutableSet",
+            "toIntArray", "toLongArray", "toDoubleArray",
+            "removeLast", "removeFirst", "removeAll", "retainAll",
+            "addAll", "addFirst", "addLast",
+            "subList", "substring", "replace", "split", "trim",
+            "startsWith", "endsWith", "padStart", "padEnd",
+            "lowercase", "uppercase", "capitalize", "decapitalize",
+            "repeat", "chunked", "windowed", "zip", "unzip",
+            "flatten", "flatMapIndexed",
+            "take", "drop", "takeWhile", "dropWhile",
+            "indexOf", "lastIndexOf", "indexOfFirst", "indexOfLast",
+            "find", "findLast", "first", "last", "firstOrNull", "lastOrNull",
+            "single", "singleOrNull",
+            "reversed", "asReversed", "shuffled",
+            "distinct", "distinctBy",
+            "sum", "average", "count",
+            "appendLine", "appendln", "append",
+            "let", "also", "apply", "run", "with", "takeIf", "takeUnless",
+            "compareTo", "coerceIn", "coerceAtLeast", "coerceAtMost",
+            "component1", "component2", "component3",
+            "getOrDefault", "getOrElse", "getOrPut",
+            "getValue", "setValue",
+            "containsKey", "containsValue",
+            "keys", "values", "entries",
+            "floorEntry", "ceilingEntry", "lowerEntry", "higherEntry",
+            "floorKey", "ceilingKey", "lowerKey", "higherKey",
+            "floor", "ceiling", "lower", "higher",
+            "peek", "poll", "offer",
+            "push", "pop",
+            "removeAt", "set", "get",
+            "isEmpty", "isNotEmpty", "isNullOrEmpty", "isNullOrBlank",
+            "isBlank", "isNotBlank",
+            "toCharArray", "toByteArray",
+            "length", "size", "lastIndex", "indices",
+            "clear", "add", "remove", "contains",
+            "first", "last",
+            "max", "min", "maxOrNull", "minOrNull",
+            "sort", "sorted", "sortDescending", "sortedDescending",
+            "reverse", "reversed",
+            "withIndex", "asSequence", "asIterable",
+            "buildString", "buildList"
+        )
+        return method in knownKotlinMethods
     }
 
     private fun genIfExpression(expr: IfExpression): String {
@@ -1574,7 +1700,8 @@ class CodeGenerator(val config: Config = Config.default) {
     }
 
     fun genLambdaAsLoopInit(lambda: LambdaExpression, size: String, elemType: String): String {
-        val idxVar = lambda.params.getOrNull(0)?.name ?: "_i"
+        val idxVar = lambda.params.getOrNull(0)?.name
+            ?: if (lambdaBodyUsesIt(lambda.body)) "_it" else "_i"
         val bodyExpr = if (lambda.body.size == 1 && lambda.body[0] is ExpressionStatement)
             genExpr((lambda.body[0] as ExpressionStatement).expr)
         else "[&]() { ${genLambdaBodyStatements(lambda)} }()"

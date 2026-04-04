@@ -1,0 +1,1589 @@
+package transpiler.codegen
+
+import transpiler.Config
+import transpiler.ast.*
+import transpiler.typesystem.TypeResolver
+
+/**
+ * Walks a [KotlinFile] AST and emits equivalent C++ source code.
+ *
+ * Usage:
+ *   val cpp = CodeGenerator(config).generate(kotlinFile)
+ */
+class CodeGenerator(val config: Config = Config.default) {
+
+    // ─── Output buffer ────────────────────────────────────────────────────────
+
+    private val out = StringBuilder()
+    private var indentLevel = 0
+
+    private fun emit(line: String) {
+        if (line.isEmpty()) { out.appendLine(); return }
+        out.append(INDENT.repeat(indentLevel))
+        out.appendLine(line)
+    }
+
+    private fun emitRaw(s: String) { out.append(s) }
+
+    private fun indent(block: () -> Unit) {
+        indentLevel++
+        block()
+        indentLevel--
+    }
+
+    // ─── Feature flags ────────────────────────────────────────────────────────
+
+    var needsBitSet  = false
+    var needsRandom  = false
+
+    fun markDirty() {}          // no-op – reserved for future mutation tracking
+    fun markNeedsRandom() { needsRandom = true }
+
+    // ─── Labeled-break support ────────────────────────────────────────────────
+
+    // Maps Kotlin label name → C++ goto label name
+    private val pendingGotoLabels = mutableSetOf<String>()
+
+    // ─── Lambda context (for return@label → continue) ─────────────────────────
+
+    // Stack of currently open "inline lambda" expansion contexts.
+    // Each entry is the Kotlin label of the enclosing lambda call (e.g. "forEach").
+    private val inlineLambdaLabels = ArrayDeque<String>()
+
+    // ─── Variable type tracking ──────────────────────────────────────────────
+
+    // Tracks variable names whose initializer is a StringBuilder (ostringstream)
+    private val stringBuilderVars = mutableSetOf<String>()
+
+    // Tracks variable names whose initializer is a set-like type (TreeSet, HashSet, etc.)
+    private val setVars = mutableSetOf<String>()
+
+    // Tracks locally defined function names (to avoid stdlib mapping conflicts)
+    private val localFunctionNames = mutableSetOf<String>()
+
+    // Tracks user-defined class names (to avoid constructor/method mapping conflicts)
+    private val userDefinedClassNames = mutableSetOf<String>()
+
+    // Tracks variable names whose type is a user-defined class (skip stdlib method mapping)
+    private val userClassVars = mutableSetOf<String>()
+
+    // ─── Main entry point ─────────────────────────────────────────────────────
+
+    fun generate(file: KotlinFile): String {
+        val body = StringBuilder()
+
+        // Detect features before emitting
+        detectFeatures(file)
+
+        // Generate file body into `out`
+        genFile(file)
+        body.append(out)
+
+        return Boilerplate.build(
+            needsIo     = true,
+            needsBitSet = needsBitSet,
+            needsRandom = needsRandom
+        ) + body.toString()
+    }
+
+    // ─── Feature detection ────────────────────────────────────────────────────
+
+    private fun detectFeatures(file: KotlinFile) {
+        val src = file.toString()   // rough scan; precise detection done during gen
+        if (src.contains("BitSet"))    needsBitSet = true
+        if (src.contains("Random") || src.contains("nextInt") || src.contains("nextLong")
+            || src.contains("nextDouble")) needsRandom = true
+    }
+
+    // ─── File / top-level ────────────────────────────────────────────────────
+
+    private fun genFile(file: KotlinFile) {
+        // Forward-declare all top-level function signatures so order doesn't matter
+        val functions   = file.declarations.filterIsInstance<TopLevelFunction>().map { it.decl }
+        val classes     = file.declarations.filterIsInstance<TopLevelClass>().map { it.decl }
+        val objects     = file.declarations.filterIsInstance<TopLevelObject>().map { it.decl }
+        val properties  = file.declarations.filterIsInstance<TopLevelProperty>().map { it.decl }
+
+        // Register user-defined class names so we skip stdlib mapping for them
+        for (cls in classes) userDefinedClassNames.add(cls.name)
+
+        // Classes first (needed by functions)
+        for (cls in classes) genClassDecl(cls)
+        for (obj in objects) genObjectDecl(obj)
+
+        // Global variables
+        for (prop in properties) genTopLevelProperty(prop)
+        if (properties.isNotEmpty()) emit("")
+
+        // Non-main functions
+        val nonMain = functions.filter { it.name != "main" }
+        val mainFn  = functions.firstOrNull { it.name == "main" }
+        for (fn in nonMain) { genFunctionDecl(fn); emit("") }
+
+        // main function
+        if (mainFn != null) {
+            genMainFunction(mainFn)
+        }
+    }
+
+    // ─── Declarations ────────────────────────────────────────────────────────
+
+    private fun genMainFunction(fn: FunctionDecl) {
+        emit("int main() {")
+        indent {
+            emit("ios::sync_with_stdio(false);")
+            emit("cin.tie(nullptr);")
+            emit("cout << boolalpha;")
+            when (val body = fn.body) {
+                is BlockBody      -> body.statements.forEach { genStatement(it) }
+                is ExpressionBody -> { emit("return ${genExpr(body.expr)};") }
+                null              -> {}
+            }
+            emit("return 0;")
+        }
+        emit("}")
+    }
+
+    private fun genFunctionDecl(fn: FunctionDecl) {
+        if (Modifier.Abstract in fn.modifiers) {
+            // Abstract → pure virtual (only makes sense inside a class)
+            val retType = retTypeToCpp(fn)
+            val params = fn.params.joinToString(", ") { paramToCpp(it) }
+            emit("virtual $retType ${fn.name}($params) = 0;")
+            return
+        }
+
+        val retType = retTypeToCpp(fn)
+        val params = fn.params.joinToString(", ") { paramToCpp(it) }
+        val isVirtual = Modifier.Override in fn.modifiers || Modifier.Open in fn.modifiers
+
+        val prefix = buildString {
+            if (isVirtual) append("virtual ")
+            if (Modifier.Override in fn.modifiers) { /* override goes after params */ }
+        }
+
+        when (val body = fn.body) {
+            null -> {
+                val overrideSuffix = if (Modifier.Override in fn.modifiers) " override" else ""
+                emit("${prefix}virtual $retType ${fn.name}($params)$overrideSuffix = 0;")
+            }
+            is ExpressionBody -> {
+                val overrideSuffix = if (Modifier.Override in fn.modifiers) " override" else ""
+                emit("$retType ${fn.name}($params)$overrideSuffix {")
+                indent { emit("return ${genExpr(body.expr)};") }
+                emit("}")
+            }
+            is BlockBody -> {
+                val overrideSuffix = if (Modifier.Override in fn.modifiers) " override" else ""
+                emit("$retType ${fn.name}($params)$overrideSuffix {")
+                indent { body.statements.forEach { genStatement(it) } }
+                emit("}")
+            }
+        }
+    }
+
+    /** Inner function (nested fun) → local lambda assigned to auto variable. */
+    private fun genLocalFunction(fn: FunctionDecl) {
+        localFunctionNames.add(fn.name)
+        val params = fn.params.joinToString(", ") { p ->
+            val t = if (p.type != null) typeToCpp(p.type) else "auto"
+            "$t ${p.name}"
+        }
+
+        // Check if function is recursive (body references its own name)
+        val isRecursive = fn.body != null && functionBodyReferencesName(fn.body, fn.name)
+
+        // For recursive nested functions, use std::function instead of auto
+        val varDecl = if (isRecursive && fn.returnType != null) {
+            val retType = if (fn.returnType == KotlinType.Unit) "void" else typeToCpp(fn.returnType)
+            val paramTypes = fn.params.joinToString(", ") { p ->
+                if (p.type != null) typeToCpp(p.type) else "auto"
+            }
+            "function<$retType($paramTypes)> ${fn.name}"
+        } else {
+            "auto ${fn.name}"
+        }
+
+        when (val body = fn.body) {
+            is ExpressionBody -> emit("$varDecl = [&]($params) { return ${genExpr(body.expr)}; };")
+            is BlockBody -> {
+                emit("$varDecl = [&]($params) {")
+                indent { body.statements.forEach { genStatement(it) } }
+                emit("};")
+            }
+            null -> emit("// abstract nested function ${fn.name} skipped")
+        }
+    }
+
+    /** Checks if a function body references a given name (for detecting recursive calls). */
+    private fun functionBodyReferencesName(body: FunctionBody, name: String): Boolean {
+        return when (body) {
+            is ExpressionBody -> exprReferencesName(body.expr, name)
+            is BlockBody -> body.statements.any { stmtReferencesName(it, name) }
+        }
+    }
+
+    private fun exprReferencesName(expr: Expression, name: String): Boolean = when (expr) {
+        is NameReference -> expr.name == name
+        is BinaryExpression -> exprReferencesName(expr.left, name) || exprReferencesName(expr.right, name)
+        is PrefixExpression -> exprReferencesName(expr.expr, name)
+        is PostfixExpression -> exprReferencesName(expr.expr, name)
+        is CallExpression -> exprReferencesName(expr.callee, name) || expr.args.any { exprReferencesName(it.value, name) }
+            || (expr.trailingLambda?.body?.any { stmtReferencesName(it, name) } ?: false)
+        is MethodCallExpression -> exprReferencesName(expr.receiver, name) || expr.args.any { exprReferencesName(it.value, name) }
+            || (expr.trailingLambda?.body?.any { stmtReferencesName(it, name) } ?: false)
+        is PropertyAccessExpr -> exprReferencesName(expr.receiver, name)
+        is IndexAccess -> exprReferencesName(expr.receiver, name) || exprReferencesName(expr.index, name)
+        is IfExpression -> exprReferencesName(expr.condition, name) || ifBranchReferencesName(expr.thenBranch, name) || ifBranchReferencesName(expr.elseBranch, name)
+        is ElvisExpression -> exprReferencesName(expr.left, name) || exprReferencesName(expr.right, name)
+        is TypeCheckExpression -> exprReferencesName(expr.expr, name)
+        is TypeCastExpression -> exprReferencesName(expr.expr, name)
+        is ReturnJumpExpr -> expr.value?.let { exprReferencesName(it, name) } ?: false
+        is ThrowJumpExpr -> exprReferencesName(expr.expr, name)
+        is ObjectCreation -> expr.args.any { exprReferencesName(it.value, name) }
+        is StringTemplate -> expr.parts.any { it is ExpressionStringPart && exprReferencesName(it.expr, name) }
+        is LambdaExpression -> expr.body.any { stmtReferencesName(it, name) }
+        is WhenExpression -> (expr.subject?.expr?.let { exprReferencesName(it, name) } ?: false) ||
+            expr.entries.any { entry ->
+                when (val b = entry.body) {
+                    is ExpressionEntryBody -> exprReferencesName(b.expr, name)
+                    is BlockEntryBody -> b.statements.any { stmtReferencesName(it, name) }
+                }
+            }
+        else -> false
+    }
+
+    private fun ifBranchReferencesName(branch: IfBranch, name: String): Boolean = when (branch) {
+        is ExprBranch -> exprReferencesName(branch.expr, name)
+        is BlockBranch -> branch.statements.any { stmtReferencesName(it, name) }
+    }
+
+    private fun stmtReferencesName(stmt: Statement, name: String): Boolean = when (stmt) {
+        is ExpressionStatement -> exprReferencesName(stmt.expr, name)
+        is ReturnStatement -> stmt.value?.let { exprReferencesName(it, name) } ?: false
+        is LocalProperty -> stmt.initializer?.let { exprReferencesName(it, name) } ?: false
+        is Assignment -> exprReferencesName(stmt.target, name) || exprReferencesName(stmt.value, name)
+        is IfStatement -> exprReferencesName(stmt.condition, name) || stmt.thenBranch.any { stmtReferencesName(it, name) } || (stmt.elseBranch?.any { stmtReferencesName(it, name) } ?: false)
+        is ForStatement -> stmt.body.any { stmtReferencesName(it, name) }
+        is WhileStatement -> exprReferencesName(stmt.condition, name) || stmt.body.any { stmtReferencesName(it, name) }
+        is ThrowStatement -> exprReferencesName(stmt.expr, name)
+        is NestedFunctionStatement -> stmt.decl.body?.let { functionBodyReferencesName(it, name) } ?: false
+        else -> false
+    }
+
+    private fun genClassDecl(cls: ClassDecl) {
+        val baseClause = if (cls.superTypes.isNotEmpty()) {
+            " : " + cls.superTypes.joinToString(", ") { entry ->
+                "public ${typeToCpp(entry.type)}"
+            }
+        } else ""
+
+        // Emit template declaration if the class has type parameters
+        if (cls.typeParams.isNotEmpty()) {
+            val templateParams = cls.typeParams.joinToString(", ") { "typename $it" }
+            emit("template<$templateParams>")
+        }
+
+        emit("struct ${cls.name}$baseClause {")
+        indent {
+            // Constructor params that are val/var become fields
+            val fields = cls.primaryConstructor.filter { it.isVal || it.isVar }
+            for (f in fields) {
+                val constQual = if (f.isVal && cls.kind != ClassKind.Data) "const " else ""
+                emit("$constQual${typeToCpp(f.type)} ${f.name};")
+            }
+            // Non-field constructor params (just ctor args) are also declared if needed by init
+            val nonFieldCtorParams = cls.primaryConstructor.filter { !it.isVal && !it.isVar }
+            for (p in nonFieldCtorParams) {
+                emit("${typeToCpp(p.type)} ${p.name};")
+            }
+
+            // Member properties
+            val memberProps = cls.members.filterIsInstance<MemberProperty>()
+            for (mp in memberProps) {
+                val init = if (mp.decl.initializer != null) " = ${genExpr(mp.decl.initializer)}" else ""
+                val useConst = !mp.decl.isMutable && (mp.decl.initializer == null || !isMutableContainerInit(mp.decl.initializer))
+                val constQ = if (useConst) "const " else ""
+                val typeStr = if (mp.decl.type != null) typeToCpp(mp.decl.type)
+                              else inferTypeFromInitializer(mp.decl.initializer)
+                emit("$constQ$typeStr ${mp.decl.name}$init;")
+            }
+
+            emit("")
+
+            // Constructor
+            if (cls.primaryConstructor.isNotEmpty() || cls.members.any { it is InitBlock }) {
+                val ctorParams = cls.primaryConstructor.joinToString(", ") { p ->
+                    "${typeToCpp(p.type)} ${p.name}_"
+                }
+                val fieldInits = fields.joinToString(", ") { "${it.name}(${it.name}_)" }
+                emit("${cls.name}($ctorParams) : $fieldInits {")
+                indent {
+                    // init blocks
+                    for (m in cls.members) {
+                        if (m is InitBlock) m.body.forEach { genStatement(it) }
+                    }
+                }
+                emit("}")
+            }
+
+            emit("")
+
+            // Member functions
+            for (m in cls.members) {
+                when (m) {
+                    is MemberFunction -> { genFunctionDecl(m.decl); emit("") }
+                    is CompanionObject -> {
+                        emit("// companion object members:")
+                        for (cm in m.members) {
+                            if (cm is MemberFunction) { emit("static "); genFunctionDecl(cm.decl) }
+                        }
+                    }
+                    else -> {}
+                }
+            }
+
+            // Data class: ==, < operators
+            if (cls.kind == ClassKind.Data && fields.isNotEmpty()) {
+                val eqBody = fields.joinToString(" && ") { "${it.name} == o.${it.name}" }
+                emit("bool operator==(const ${cls.name}& o) const { return $eqBody; }")
+                val ltBody = genLexicographicLt(fields.map { it.name }, "o")
+                emit("bool operator<(const ${cls.name}& o) const { return $ltBody; }")
+            }
+        }
+        emit("};")
+        emit("")
+    }
+
+    private fun genLexicographicLt(fields: List<String>, other: String): String {
+        if (fields.isEmpty()) return "false"
+        if (fields.size == 1) return "${fields[0]} < $other.${fields[0]}"
+        val head = fields[0]
+        val rest = genLexicographicLt(fields.drop(1), other)
+        return "$head < $other.$head || ($head == $other.$head && ($rest))"
+    }
+
+    private fun genObjectDecl(obj: ObjectDecl) {
+        emit("struct ${obj.name} {")
+        indent {
+            for (m in obj.members) {
+                when (m) {
+                    is MemberFunction -> genFunctionDecl(m.decl)
+                    is MemberProperty -> {
+                        val typeStr = if (m.decl.type != null) typeToCpp(m.decl.type) else "auto"
+                        val init = if (m.decl.initializer != null) " = ${genExpr(m.decl.initializer)}" else ""
+                        emit("static $typeStr ${m.decl.name}$init;")
+                    }
+                    else -> {}
+                }
+            }
+        }
+        emit("} ${obj.name.replaceFirstChar { it.lowercaseChar() }};")
+    }
+
+    private fun genTopLevelProperty(prop: PropertyDecl) {
+        val typeStr = if (prop.type != null) typeToCpp(prop.type) else "auto"
+        val constQ  = if (!prop.isMutable) "const " else ""
+        val init    = if (prop.initializer != null) " = ${genExpr(prop.initializer)}" else ""
+        emit("$constQ$typeStr ${prop.name}$init;")
+    }
+
+    // ─── Statements ──────────────────────────────────────────────────────────
+
+    fun genStatement(stmt: Statement) {
+        when (stmt) {
+            is ExpressionStatement    -> {
+                when (val e = stmt.expr) {
+                    is ReturnJumpExpr  -> genReturnStatement(ReturnStatement(e.value, e.label))
+                    is ThrowJumpExpr   -> emit("throw ${genExpr(e.expr)};")
+                    is BreakJumpExpr   -> if (e.label != null) { pendingGotoLabels.add(e.label); emit("goto _lbl_${e.label};") } else emit("break;")
+                    is ContinueJumpExpr -> if (e.label != null) { pendingGotoLabels.add("${e.label}_cont"); emit("goto _lbl_${e.label}_cont;") } else emit("continue;")
+                    else -> emit("${genExpr(e)};")
+                }
+            }
+            is LocalProperty          -> genLocalProperty(stmt)
+            is DestructuringDeclaration -> genDestructuringDecl(stmt)
+            is Assignment             -> genAssignment(stmt)
+            is IfStatement            -> genIfStatement(stmt)
+            is WhenStatement          -> genWhenStatement(stmt)
+            is ForStatement           -> genForStatement(stmt)
+            is WhileStatement         -> genWhileStatement(stmt)
+            is ReturnStatement        -> genReturnStatement(stmt)
+            is BreakStatement         -> emit("break;")
+            is LabeledBreak           -> {
+                pendingGotoLabels.add(stmt.label)
+                emit("goto _lbl_${stmt.label};")
+            }
+            is ContinueStatement      -> emit("continue;")
+            is LabeledContinue        -> {
+                pendingGotoLabels.add("${stmt.label}_cont")
+                emit("goto _lbl_${stmt.label}_cont;")
+            }
+            is ThrowStatement         -> emit("throw ${genExpr(stmt.expr)};")
+            is LabeledStatement       -> genLabeledStatement(stmt)
+            is NestedFunctionStatement -> genLocalFunction(stmt.decl)
+        }
+    }
+
+    private fun genLocalProperty(p: LocalProperty) {
+        // Track StringBuilder variables for .toString() → .str() mapping
+        if (p.initializer != null && isStringBuilderInit(p.initializer)) {
+            stringBuilderVars.add(p.name)
+        }
+        // Track set variables for .add() → .insert() mapping
+        if (p.initializer != null && isSetInit(p.initializer)) {
+            setVars.add(p.name)
+        }
+        // Track variables initialized with user-defined class constructors
+        if (p.initializer != null && isUserClassInit(p.initializer)) {
+            userClassVars.add(p.name)
+        }
+        val init = if (p.initializer != null) " = ${genExpr(p.initializer)}" else ""
+        // Kotlin val = immutable reference, but the object may be mutable (e.g. mutableListOf).
+        // In C++ const prevents mutation of the object itself, so skip const for mutable containers.
+        val useConst = !p.isMutable && p.initializer != null && !isMutableContainerInit(p.initializer)
+        if (p.type != null) {
+            val constQ = if (useConst) "const " else ""
+            emit("$constQ${typeToCpp(p.type)} ${p.name}$init;")
+        } else {
+            val constQ = if (useConst) "const " else ""
+            emit("${constQ}auto ${p.name}$init;")
+        }
+    }
+
+    private fun isStringBuilderInit(expr: Expression): Boolean = when (expr) {
+        is CallExpression -> expr.callee is NameReference && (expr.callee as NameReference).name == "StringBuilder"
+        is ObjectCreation -> {
+            val typeName = when (expr.type) {
+                is KotlinType.Simple -> (expr.type as KotlinType.Simple).name
+                is KotlinType.Generic -> (expr.type as KotlinType.Generic).name
+                else -> ""
+            }
+            typeName == "StringBuilder"
+        }
+        else -> false
+    }
+
+    private val setTypeNames = setOf(
+        "TreeSet", "HashSet", "LinkedHashSet",
+        "mutableSetOf", "hashSetOf", "sortedSetOf", "setOf", "linkedSetOf"
+    )
+
+    private fun isSetInit(expr: Expression): Boolean = when (expr) {
+        is CallExpression -> expr.callee is NameReference && (expr.callee as NameReference).name in setTypeNames
+        is ObjectCreation -> {
+            val typeName = when (expr.type) {
+                is KotlinType.Simple -> (expr.type as KotlinType.Simple).name
+                is KotlinType.Generic -> (expr.type as KotlinType.Generic).name
+                else -> ""
+            }
+            typeName in setTypeNames
+        }
+        else -> false
+    }
+
+    private fun isUserClassInit(expr: Expression): Boolean = when (expr) {
+        is CallExpression -> expr.callee is NameReference && (expr.callee as NameReference).name in userDefinedClassNames
+        is ObjectCreation -> {
+            val typeName = when (expr.type) {
+                is KotlinType.Simple -> (expr.type as KotlinType.Simple).name
+                is KotlinType.Generic -> (expr.type as KotlinType.Generic).name
+                else -> ""
+            }
+            typeName in userDefinedClassNames
+        }
+        else -> false
+    }
+
+    /**
+     * Returns true if the expression initializes a mutable container or a user-defined
+     * class instance.  For `val` declarations, `const` should only be applied to primitive
+     * types, strings, and simple immutable values — never to class instances whose internal
+     * state may be mutated through methods.
+     */
+    private fun isMutableContainerInit(expr: Expression): Boolean {
+        val mutableCallNames = setOf(
+            "mutableListOf", "mutableSetOf", "mutableMapOf", "arrayListOf",
+            "hashMapOf", "hashSetOf", "linkedMapOf", "linkedSetOf",
+            "ArrayDeque", "PriorityQueue", "Stack", "TreeSet", "TreeMap",
+            "ArrayList", "LinkedList", "HashMap", "LinkedHashMap",
+            "MutableList", "StringBuilder"
+        )
+        // Primitive / immutable types whose val declarations can safely be const
+        val immutableTypes = setOf(
+            "Int", "Long", "Double", "Float", "Boolean", "Char", "Byte", "Short",
+            "String", "UInt", "ULong", "UByte", "UShort"
+        )
+        return when (expr) {
+            is CallExpression -> {
+                val callee = expr.callee
+                if (callee is NameReference) {
+                    // Known mutable containers
+                    if (callee.name in mutableCallNames) return true
+                    // If the name starts with an uppercase letter and is not a known
+                    // immutable type or stdlib factory, treat it as a class constructor
+                    // whose instance could have mutable state.
+                    if (callee.name[0].isUpperCase() && callee.name !in immutableTypes
+                        && callee.name !in setOf("Pair", "Triple")) return true
+                }
+                false
+            }
+            is ObjectCreation -> {
+                val typeName = when (expr.type) {
+                    is KotlinType.Simple -> (expr.type as KotlinType.Simple).name
+                    is KotlinType.Generic -> (expr.type as KotlinType.Generic).name
+                    else -> ""
+                }
+                // Any ObjectCreation is a class instance; skip const
+                true
+            }
+            else -> false
+        }
+    }
+
+    private fun genDestructuringDecl(d: DestructuringDeclaration) {
+        val typeStr = if (d.type != null) typeToCpp(d.type) else "auto"
+        val names = d.names.joinToString(", ") { it ?: "_" }
+        emit("auto [$names] = ${genExpr(d.initializer)};")
+    }
+
+    private fun genAssignment(a: Assignment) {
+        val op = when (a.op) {
+            AssignOp.Assign      -> "="
+            AssignOp.PlusAssign  -> "+="
+            AssignOp.MinusAssign -> "-="
+            AssignOp.TimesAssign -> "*="
+            AssignOp.DivAssign   -> "/="
+            AssignOp.ModAssign   -> "%="
+        }
+        emit("${genExpr(a.target)} $op ${genExpr(a.value)};")
+    }
+
+    private fun genIfStatement(s: IfStatement) {
+        emit("if (${genExpr(s.condition)}) {")
+        indent { s.thenBranch.forEach { genStatement(it) } }
+        if (s.elseBranch != null) {
+            if (s.elseBranch.size == 1 && s.elseBranch[0] is IfStatement) {
+                emitRaw("${INDENT.repeat(indentLevel)}}")
+                out.append(" else ")
+                val inner = s.elseBranch[0] as IfStatement
+                // inline else-if
+                out.appendLine("if (${genExpr(inner.condition)}) {")
+                indent { inner.thenBranch.forEach { genStatement(it) } }
+                if (inner.elseBranch != null) {
+                    emit("} else {")
+                    indent { inner.elseBranch.forEach { genStatement(it) } }
+                }
+                emit("}")
+            } else {
+                emit("} else {")
+                indent { s.elseBranch.forEach { genStatement(it) } }
+                emit("}")
+            }
+        } else {
+            emit("}")
+        }
+    }
+
+    private fun genWhenStatement(s: WhenStatement) {
+        genWhenEntries(s.subject, s.entries, asExpr = false)
+    }
+
+    private fun genWhenEntries(subject: WhenSubject?, entries: List<WhenEntry>, asExpr: Boolean): String? {
+        val subjectExpr = subject?.expr?.let { genExpr(it) }
+        val binding = subject?.binding
+
+        var first = true
+        for (entry in entries) {
+            val isElse = entry.conditions.isEmpty() || entry.conditions.any { it is ElseCondition }
+            val cond = if (isElse) null else buildWhenCondition(entry.conditions, subjectExpr)
+
+            if (first) {
+                if (cond != null) emit("if ($cond) {") else emit("{")
+                first = false
+            } else {
+                if (cond != null) emit("} else if ($cond) {") else emit("} else {")
+            }
+
+            indent {
+                if (binding != null && subjectExpr != null) {
+                    // Subject binding – hoist it
+                }
+                when (val body = entry.body) {
+                    is BlockEntryBody -> body.statements.forEach { genStatement(it) }
+                    is ExpressionEntryBody -> {
+                        if (asExpr) emit("return ${genExpr(body.expr)};")
+                        else emit("${genExpr(body.expr)};")
+                    }
+                }
+            }
+        }
+        if (!first) emit("}")
+        return null
+    }
+
+    private fun buildWhenCondition(conditions: List<WhenCondition>, subject: String?): String {
+        return conditions.joinToString(" || ") { cond ->
+            when (cond) {
+                is ExpressionCondition ->
+                    if (subject != null) "$subject == ${genExpr(cond.expr)}" else genExpr(cond.expr)
+                is RangeCondition -> {
+                    val rangeExpr = cond.range
+                    val check = if (subject != null && rangeExpr is RangeExpression) {
+                        val lo = genExpr(rangeExpr.start)
+                        val hi = genExpr(rangeExpr.end)
+                        when (rangeExpr.kind) {
+                            RangeKind.Inclusive -> "($subject >= $lo && $subject <= $hi)"
+                            RangeKind.Until    -> "($subject >= $lo && $subject < $hi)"
+                            RangeKind.DownTo   -> "($subject <= $lo && $subject >= $hi)"
+                        }
+                    } else {
+                        val rangeCpp = genExpr(rangeExpr)
+                        if (subject != null) "/* in range */ $rangeCpp" else rangeCpp
+                    }
+                    if (cond.negated) "!($check)" else check
+                }
+                is TypeCondition -> {
+                    val typeCpp = typeToCpp(cond.type)
+                    val check = if (subject != null) "dynamic_cast<$typeCpp*>(&($subject)) != nullptr" else "false"
+                    if (cond.negated) "!($check)" else check
+                }
+                is ElseCondition -> "true"
+            }
+        }
+    }
+
+    private fun genForStatement(s: ForStatement) {
+        when (val iter = s.iterable) {
+            is RangeExpression -> genForRange(s.variable, iter, s.body)
+            is CallExpression  -> {
+                // Special case: indices
+                val callee = iter.callee
+                if (callee is PropertyAccessExpr && callee.name == "indices") {
+                    val recv = genExpr(callee.receiver)
+                    val varName = (s.variable as? SimpleVar)?.name ?: "_i"
+                    emit("for (int $varName = 0; $varName < (int)$recv.size(); $varName++) {")
+                    indent {
+                        genGotoContLabel(s)
+                        s.body.forEach { genStatement(it) }
+                    }
+                    emit("}")
+                    genGotoBreakLabel(s)
+                    return
+                }
+                genForCollection(s.variable, iter, s.body)
+            }
+            else -> genForCollection(s.variable, iter, s.body)
+        }
+    }
+
+    private fun genForRange(variable: ForLoopVariable, range: RangeExpression, body: List<Statement>) {
+        val varName = (variable as? SimpleVar)?.name ?: "_i"
+        val start = genExpr(range.start)
+        val end   = genExpr(range.end)
+        val step  = range.step?.let { genExpr(it) }
+
+        when (range.kind) {
+            RangeKind.Inclusive -> {
+                val inc = if (step != null) "$varName += $step" else "$varName++"
+                emit("for (auto $varName = $start; $varName <= $end; $inc) {")
+            }
+            RangeKind.Until -> {
+                val inc = if (step != null) "$varName += $step" else "$varName++"
+                emit("for (auto $varName = $start; $varName < $end; $inc) {")
+            }
+            RangeKind.DownTo -> {
+                val dec = if (step != null) "$varName -= $step" else "$varName--"
+                emit("for (auto $varName = $start; $varName >= $end; $dec) {")
+            }
+        }
+        indent { body.forEach { genStatement(it) } }
+        emit("}")
+    }
+
+    private fun genForCollection(variable: ForLoopVariable, iterable: Expression, body: List<Statement>) {
+        val iterCpp = genExpr(iterable)
+        val varDecl = when (variable) {
+            is SimpleVar       -> "auto& ${variable.name}"
+            is DestructuredVar -> {
+                val names = variable.names.joinToString(", ") { it ?: "_" }
+                "auto& [$names]"
+            }
+        }
+        emit("for ($varDecl : $iterCpp) {")
+        indent { body.forEach { genStatement(it) } }
+        emit("}")
+    }
+
+    // Emit a continue-goto label if needed
+    private fun genGotoContLabel(s: ForStatement) {
+        // Only emit if there's a labeled continue targeting this loop
+        // (Handled lazily: the label is emitted at the END of the loop body)
+    }
+    private fun genGotoBreakLabel(s: ForStatement) { /* similarly handled in LabeledStatement */ }
+
+    private fun genWhileStatement(s: WhileStatement) {
+        if (s.isDoWhile) {
+            emit("do {")
+            indent { s.body.forEach { genStatement(it) } }
+            emit("} while (${genExpr(s.condition)});")
+        } else {
+            emit("while (${genExpr(s.condition)}) {")
+            indent { s.body.forEach { genStatement(it) } }
+            emit("}")
+        }
+    }
+
+    private fun genReturnStatement(s: ReturnStatement) {
+        if (s.label != null) {
+            // return@forEach (or other inline lambda label) → continue (skip to next iteration)
+            if (s.label in inlineLambdaLabels) {
+                emit("continue;")
+                return
+            }
+            // return@outerLabel → goto to labeled break target
+            pendingGotoLabels.add(s.label)
+            emit("goto _lbl_${s.label};")
+            return
+        }
+        if (s.value != null) emit("return ${genExpr(s.value)};")
+        else emit("return;")
+    }
+
+    private fun genLabeledStatement(s: LabeledStatement) {
+        // The label applies to the inner statement.  For loops, we place goto targets
+        // immediately before (break) and at end of body (continue).
+        val label = s.label
+        val inner = s.stmt
+
+        if (inner is ForStatement || inner is WhileStatement) {
+            // Emit the loop (it will be followed by the break label below)
+            genStatement(inner)
+            // Break goto label after the loop
+            if (pendingGotoLabels.contains(label)) emit("_lbl_$label:;")
+            // Continue goto label inside loop body is handled separately
+        } else {
+            genStatement(inner)
+            if (pendingGotoLabels.contains(label)) emit("_lbl_$label:;")
+        }
+    }
+
+    // ─── Expression generation ────────────────────────────────────────────────
+
+    fun genExpr(expr: Expression): String = when (expr) {
+        is IntLiteral       -> expr.value.toString()
+        is LongLiteral      -> "${expr.value}LL"
+        is DoubleLiteral    -> expr.value.toString().let { if ('.' in it || 'e' in it) it else "$it.0" }
+        is FloatLiteral     -> "${expr.value}f"
+        is BooleanLiteral   -> if (expr.value) "true" else "false"
+        is CharLiteral      -> "'${escapeChar(expr.value)}'"
+        is StringLiteral    -> "\"${escapeString(expr.value)}\""
+        is NullLiteral      -> "nullptr"
+
+        is StringTemplate   -> genStringTemplate(expr)
+
+        is NameReference    -> sanitizeName(expr.name)
+        is PropertyAccessExpr -> genPropertyAccess(expr)
+        is IndexAccess      -> "${genExpr(expr.receiver)}[${genExpr(expr.index)}]"
+        is ThisExpression   -> "this"
+        is SuperExpression  -> "/* super */"
+
+        is BinaryExpression -> genBinaryExpr(expr)
+        is PrefixExpression -> genPrefixExpr(expr)
+        is PostfixExpression -> genPostfixExpr(expr)
+        is TypeCheckExpression -> genTypeCheck(expr)
+        is TypeCastExpression  -> genTypeCast(expr)
+        is ElvisExpression     -> genElvisExpr(expr)
+        is RangeExpression     -> genRangeAsValue(expr)
+
+        is CallExpression         -> genCallExpr(expr)
+        is MethodCallExpression   -> genMethodCallExpr(expr)
+        is LambdaExpression       -> genLambdaAsCppLambda(expr)
+        is IfExpression           -> genIfExpression(expr)
+        is ReturnJumpExpr         -> { if (expr.value != null) "/* return ${genExpr(expr.value)} */" else "/* return */" }
+        is ThrowJumpExpr          -> "throw ${genExpr(expr.expr)}"
+        is BreakJumpExpr          -> { if (expr.label != null) { pendingGotoLabels.add(expr.label); "goto _lbl_${expr.label}" } else "break" }
+        is ContinueJumpExpr       -> { if (expr.label != null) { pendingGotoLabels.add("${expr.label}_cont"); "goto _lbl_${expr.label}_cont" } else "continue" }
+        is WhenExpression      -> genWhenExpression(expr)
+        is ObjectCreation      -> genObjectCreation(expr)
+        is AnonymousObject     -> "/* anon object */"
+    }
+
+    private fun genPropertyAccess(expr: PropertyAccessExpr): String {
+        val recv = genExpr(expr.receiver)
+        val safe = expr.isSafe
+
+        // Convert known property accesses
+        return when (expr.name) {
+            "size"      -> if (safe) "($recv ? (int)$recv->size() : 0)" else "(int)$recv.size()"
+            "lastIndex" -> if (safe) "($recv ? (int)$recv->size()-1 : -1)" else "((int)$recv.size()-1)"
+            "first"     -> if (safe) "($recv ? $recv->front() : /* null */{})" else "$recv.front()"
+            "last"      -> if (safe) "($recv ? $recv->back()  : /* null */{})" else "$recv.back()"
+            "indices"   -> "(0..(int)$recv.size()-1)"  // used in for loops
+            "length"    -> "(int)$recv.size()"
+            "isEmpty"   -> "$recv.empty()"
+            "isNotEmpty"-> "(!$recv.empty())"
+            "entries"   -> "vector<pair<decay_t<decltype($recv.begin()->first)>, decay_t<decltype($recv.begin()->second)>>>($recv.begin(), $recv.end())"
+            "second"    -> "$recv.second"
+            "key"       -> "$recv.first"
+            "value"     -> "$recv.second"
+            else        -> if (safe) "($recv != nullptr ? $recv->${expr.name} : /* null */{})"
+                           else "$recv.${expr.name}"
+        }
+    }
+
+    private fun genBinaryExpr(expr: BinaryExpression): String {
+        val l = genExpr(expr.left)
+        val r = genExpr(expr.right)
+        return when (expr.op) {
+            BinaryOp.Plus    -> "$l + $r"
+            BinaryOp.Minus   -> "$l - $r"
+            BinaryOp.Times   -> "$l * $r"
+            BinaryOp.Div     -> "$l / $r"
+            BinaryOp.Mod     -> "$l % $r"
+            BinaryOp.And     -> "$l && $r"
+            BinaryOp.Or      -> "$l || $r"
+            BinaryOp.Eq      -> "$l == $r"
+            BinaryOp.NotEq   -> "$l != $r"
+            BinaryOp.RefEq   -> "$l == $r"
+            BinaryOp.RefNotEq -> "$l != $r"
+            BinaryOp.Lt      -> "$l < $r"
+            BinaryOp.Gt      -> "$l > $r"
+            BinaryOp.LtEq    -> "$l <= $r"
+            BinaryOp.GtEq    -> "$l >= $r"
+            BinaryOp.Elvis   -> {
+                // Map index access: map[key] ?: default → count-based check
+                if (expr.left is IndexAccess) {
+                    val receiver = genExpr((expr.left as IndexAccess).receiver)
+                    val index = genExpr((expr.left as IndexAccess).index)
+                    "($receiver.count($index) ? $receiver[$index] : $r)"
+                } else {
+                    "($l != nullptr ? $l : $r)"
+                }
+            }
+            BinaryOp.RangeTo -> "/* range $l..$r */"
+            BinaryOp.RangeUntil -> "/* range $l..<$r */"
+            BinaryOp.Shl     -> "($l << $r)"
+            BinaryOp.Shr     -> "($l >> $r)"
+            BinaryOp.Ushr    -> "((unsigned)$l >> $r)"
+            BinaryOp.BitAnd  -> "($l & $r)"
+            BinaryOp.BitOr   -> "($l | $r)"
+            BinaryOp.BitXor  -> "($l ^ $r)"
+        }
+    }
+
+    private fun genPrefixExpr(expr: PrefixExpression): String {
+        val e = genExpr(expr.expr)
+        return when (expr.op) {
+            PrefixOp.UnaryMinus -> "-($e)"
+            PrefixOp.UnaryPlus  -> "+($e)"
+            PrefixOp.Not        -> "!($e)"
+            PrefixOp.PreInc     -> "++$e"
+            PrefixOp.PreDec     -> "--$e"
+        }
+    }
+
+    private fun genPostfixExpr(expr: PostfixExpression): String {
+        val e = genExpr(expr.expr)
+        return when (expr.op) {
+            PostfixOp.PostInc -> "$e++"
+            PostfixOp.PostDec -> "$e--"
+            PostfixOp.NotNull -> e  // !! = no-op (memory leaks acceptable)
+        }
+    }
+
+    private fun genTypeCheck(expr: TypeCheckExpression): String {
+        val e = genExpr(expr.expr)
+        val t = typeToCpp(expr.type)
+        val check = "dynamic_cast<$t*>(&($e)) != nullptr"
+        return if (expr.negated) "!($check)" else check
+    }
+
+    private fun genTypeCast(expr: TypeCastExpression): String {
+        val e = genExpr(expr.expr)
+        val t = typeToCpp(expr.type)
+        // Safe cast (as?) → dynamic_cast returning pointer
+        return if (expr.isSafe) "dynamic_cast<$t*>(&($e))"
+               else "static_cast<$t>($e)"
+    }
+
+    private fun genElvisExpr(expr: ElvisExpression): String {
+        val left = expr.left
+        val right = genExpr(expr.right)
+        // Map index access: map[key] ?: default → (map.count(key) ? map[key] : default)
+        if (left is IndexAccess) {
+            val receiver = genExpr(left.receiver)
+            val index = genExpr(left.index)
+            return "($receiver.count($index) ? $receiver[$index] : $right)"
+        }
+        // General case: keep nullptr check for nullable types
+        val leftCpp = genExpr(left)
+        return "($leftCpp != nullptr ? *$leftCpp : $right)"
+    }
+
+    private fun genRangeAsValue(range: RangeExpression): String {
+        // Ranges as values (not in for) — return a pair so they can be iterated
+        val s = genExpr(range.start)
+        val e = genExpr(range.end)
+        return when (range.kind) {
+            RangeKind.Inclusive -> "/* range $s..$e */"
+            RangeKind.Until     -> "/* range $s until $e */"
+            RangeKind.DownTo    -> "/* range $s downTo $e */"
+        }
+    }
+
+    private fun genCallExpr(expr: CallExpression): String {
+        val lambda = expr.trailingLambda
+
+        // Callee is a simple name → check stdlib (skip if locally defined)
+        if (expr.callee is NameReference) {
+            val name = (expr.callee as NameReference).name
+            if (name !in localFunctionNames) {
+                val mapped = StdlibMapper.mapTopLevelCall(name, expr.typeArgs, expr.args, lambda, this)
+                if (mapped != null) return mapped
+            }
+
+            // Known Kotlin type constructors that are parsed as CallExpression
+            // (not ObjectCreation), e.g. TreeSet(), StringBuilder(), etc.
+            val constructorMapping = mapConstructorCall(name, expr.typeArgs, expr.args)
+            if (constructorMapping != null) return constructorMapping
+        }
+
+        // Callee is a property access (e.g. Math.abs, receiver.method)
+        if (expr.callee is PropertyAccessExpr) {
+            val pa = expr.callee as PropertyAccessExpr
+            // Intercept Math.xxx calls → translate to C++ stdlib math functions
+            if (pa.receiver is NameReference && (pa.receiver as NameReference).name == "Math") {
+                val mathMapped = StdlibMapper.mapTopLevelCall(pa.name, expr.typeArgs, expr.args, lambda, this)
+                if (mathMapped != null) return mathMapped
+            }
+            // StringBuilder method overrides
+            if (pa.receiver is NameReference && (pa.receiver as NameReference).name in stringBuilderVars) {
+                val sbRecv = genExpr(pa.receiver)
+                when (pa.name) {
+                    "toString" -> if (expr.args.isEmpty()) return "$sbRecv.str()"
+                    "append" -> if (expr.args.size == 1) return "{ $sbRecv << ${genExpr(expr.args[0].value)}; }"
+                    "clear" -> if (expr.args.isEmpty()) return "$sbRecv.str(\"\")"
+                }
+            }
+            val isUserClassRecv = pa.receiver is NameReference && (pa.receiver as NameReference).name in userClassVars
+            // Set-specific method overrides
+            if (!isUserClassRecv && pa.receiver is NameReference && (pa.receiver as NameReference).name in setVars) {
+                val recv = genExpr(pa.receiver)
+                when (pa.name) {
+                    "add" -> if (expr.args.size == 1) return "$recv.insert(${genExpr(expr.args[0].value)})"
+                    "first" -> if (expr.args.isEmpty()) return "(*$recv.begin())"
+                    "last" -> if (expr.args.isEmpty()) return "(*$recv.rbegin())"
+                    "remove" -> if (expr.args.size == 1) return "$recv.erase(${genExpr(expr.args[0].value)})"
+                    "contains" -> if (expr.args.size == 1) return "($recv.count(${genExpr(expr.args[0].value)}) > 0)"
+                }
+            }
+            // Skip stdlib method mapping for user-defined class instances
+            if (isUserClassRecv) {
+                val recv = genExpr(pa.receiver)
+                val argsList = buildArgList(expr.args, lambda)
+                return "$recv.${pa.name}($argsList)"
+            }
+            val recv = genExpr(pa.receiver)
+            val mapped = StdlibMapper.mapMethodCall(
+                recv, pa.name, expr.typeArgs, expr.args, lambda, pa.isSafe, this)
+            if (mapped != null) return mapped
+        }
+
+        // Generic call
+        val callee = genExpr(expr.callee)
+        val typeArgStr = if (expr.typeArgs.isNotEmpty())
+            "<${expr.typeArgs.joinToString(", ") { typeToCpp(it) }}>" else ""
+        val args = buildArgList(expr.args, lambda)
+        return "$callee$typeArgStr($args)"
+    }
+
+    /** Maps known Kotlin type constructor calls (parsed as CallExpression) to C++ equivalents. */
+    private fun mapConstructorCall(name: String, typeArgs: List<KotlinType>, args: List<CallArgument>): String? {
+        // Skip mapping for user-defined classes
+        if (name in userDefinedClassNames) return null
+
+        fun typeArg(i: Int): String = if (typeArgs.size > i) typeToCpp(typeArgs[i]) else "int"
+        val argsCpp = args.joinToString(", ") { genExpr(it.value) }
+
+        return when (name) {
+            "TreeSet"       -> "set<${typeArg(0)}>($argsCpp)"
+            "TreeMap"       -> "map<${typeArg(0)}, ${typeArg(1)}>($argsCpp)"
+            "HashMap"       -> "unordered_map<${typeArg(0)}, ${typeArg(1)}>($argsCpp)"
+            "HashSet"       -> "unordered_set<${typeArg(0)}>($argsCpp)"
+            "LinkedHashMap" -> "map<${typeArg(0)}, ${typeArg(1)}>($argsCpp)"
+            "LinkedHashSet" -> "set<${typeArg(0)}>($argsCpp)"
+            "ArrayDeque"    -> "deque<${typeArg(0)}>($argsCpp)"
+            "PriorityQueue" -> "priority_queue<${typeArg(0)}>($argsCpp)"
+            "ArrayList"     -> "vector<${typeArg(0)}>($argsCpp)"
+            "Stack"         -> "stack<${typeArg(0)}>($argsCpp)"
+            "StringBuilder" -> "ostringstream($argsCpp)"
+            else            -> null
+        }
+    }
+
+    private fun buildArgList(args: List<CallArgument>, lambda: LambdaExpression?): String {
+        val parts = args.map { genExpr(it.value) }.toMutableList()
+        if (lambda != null) parts.add(genLambdaAsCppLambda(lambda))
+        return parts.joinToString(", ")
+    }
+
+    /** Generates a MethodCallExpression (receiver.method(args)). */
+    private fun genMethodCallExpr(expr: MethodCallExpression): String {
+        val isUserClassReceiver = expr.receiver is NameReference
+            && (expr.receiver as NameReference).name in userClassVars
+
+        // Intercept Math.xxx calls → translate to C++ stdlib math functions
+        if (expr.receiver is NameReference && (expr.receiver as NameReference).name == "Math") {
+            val mathMapped = StdlibMapper.mapTopLevelCall(expr.method, expr.typeArgs, expr.args, expr.trailingLambda, this)
+            if (mathMapped != null) return mathMapped
+        }
+
+        // StringBuilder method overrides: toString→str, append→<<, clear→str("")
+        if (expr.receiver is NameReference && (expr.receiver as NameReference).name in stringBuilderVars) {
+            val recv = genExpr(expr.receiver)
+            when (expr.method) {
+                "toString" -> if (expr.args.isEmpty()) return "$recv.str()"
+                "append" -> if (expr.args.size == 1) return "{ $recv << ${genExpr(expr.args[0].value)}; }"
+                "clear" -> if (expr.args.isEmpty()) return "$recv.str(\"\")"
+            }
+        }
+
+        // Set-specific method overrides: add→insert, first→*begin, last→*rbegin
+        if (!isUserClassReceiver && expr.receiver is NameReference && (expr.receiver as NameReference).name in setVars) {
+            val recv = genExpr(expr.receiver)
+            when (expr.method) {
+                "add" -> if (expr.args.size == 1) return "$recv.insert(${genExpr(expr.args[0].value)})"
+                "first" -> if (expr.args.isEmpty()) return "(*$recv.begin())"
+                "last" -> if (expr.args.isEmpty()) return "(*$recv.rbegin())"
+                "remove" -> if (expr.args.size == 1) return "$recv.erase(${genExpr(expr.args[0].value)})"
+                "contains" -> if (expr.args.size == 1) return "($recv.count(${genExpr(expr.args[0].value)}) > 0)"
+            }
+        }
+
+        // Skip stdlib method mapping for user-defined class instances
+        if (isUserClassReceiver) {
+            val recv = genExpr(expr.receiver)
+            val args = buildArgList(expr.args, expr.trailingLambda)
+            val op = if (expr.isSafeCall) "->" else "."
+            return "$recv$op${expr.method}($args)"
+        }
+
+        val recv = genExpr(expr.receiver)
+        val mapped = StdlibMapper.mapMethodCall(
+            recv, expr.method, expr.typeArgs, expr.args, expr.trailingLambda, expr.isSafeCall, this)
+        if (mapped != null) return mapped
+
+        val args = buildArgList(expr.args, expr.trailingLambda)
+        val op = if (expr.isSafeCall) "->" else "."
+        return "$recv$op${expr.method}($args)"
+    }
+
+    private fun genIfExpression(expr: IfExpression): String {
+        val cond = genExpr(expr.condition)
+        val thenIsSimple = expr.thenBranch is ExprBranch
+        val elseIsSimple = expr.elseBranch is ExprBranch
+
+        // Simple ternary
+        if (thenIsSimple && elseIsSimple) {
+            val t = genExpr((expr.thenBranch as ExprBranch).expr)
+            val e = genExpr((expr.elseBranch as ExprBranch).expr)
+            return "($cond ? $t : $e)"
+        }
+
+        // Block → immediately-invoked lambda
+        return buildString {
+            append("[&]() -> auto {\n")
+            val thenStmts = when (expr.thenBranch) {
+                is ExprBranch  -> listOf(ReturnStatement(expr.thenBranch.expr))
+                is BlockBranch -> {
+                    val stmts = expr.thenBranch.statements.toMutableList()
+                    if (stmts.isNotEmpty()) {
+                        val last = stmts.last()
+                        if (last is ExpressionStatement)
+                            stmts[stmts.lastIndex] = ReturnStatement(last.expr)
+                    }
+                    stmts
+                }
+            }
+            val elseStmts = when (expr.elseBranch) {
+                is ExprBranch  -> listOf(ReturnStatement(expr.elseBranch.expr))
+                is BlockBranch -> {
+                    val stmts = expr.elseBranch.statements.toMutableList()
+                    if (stmts.isNotEmpty()) {
+                        val last = stmts.last()
+                        if (last is ExpressionStatement)
+                            stmts[stmts.lastIndex] = ReturnStatement(last.expr)
+                    }
+                    stmts
+                }
+            }
+
+            // We have to build the if inline using a sub-generator
+            val sub = CodeGenerator(config)
+            sub.emit("if ($cond) {")
+            sub.indent { thenStmts.forEach { sub.genStatement(it) } }
+            sub.emit("} else {")
+            sub.indent { elseStmts.forEach { sub.genStatement(it) } }
+            sub.emit("}")
+            append(sub.out.toString().trimEnd())
+            append("\n}()")
+        }
+    }
+
+    private fun genWhenExpression(expr: WhenExpression): String {
+        // Emit as immediately-invoked lambda
+        val sub = CodeGenerator(config)
+        val subject = expr.subject
+        val subjectExpr = subject?.expr?.let { genExpr(it) }
+
+        var first = true
+        for (entry in expr.entries) {
+            val isElse = entry.conditions.isEmpty() || entry.conditions.any { it is ElseCondition }
+            val cond = if (isElse) null else buildWhenCondition(entry.conditions, subjectExpr)
+
+            if (first) {
+                if (cond != null) sub.emit("if ($cond) {") else sub.emit("{")
+                first = false
+            } else {
+                if (cond != null) sub.emit("} else if ($cond) {") else sub.emit("} else {")
+            }
+
+            sub.indent {
+                when (val body = entry.body) {
+                    is BlockEntryBody -> {
+                        val stmts = body.statements.toMutableList()
+                        if (stmts.isNotEmpty()) {
+                            val last = stmts.last()
+                            if (last is ExpressionStatement)
+                                stmts[stmts.lastIndex] = ReturnStatement(last.expr)
+                        }
+                        stmts.forEach { sub.genStatement(it) }
+                    }
+                    is ExpressionEntryBody -> sub.emit("return ${genExpr(body.expr)};")
+                }
+            }
+        }
+        if (!first) sub.emit("}")
+
+        return "[&]() -> auto {\n${sub.out.toString().trimEnd()}\n}()"
+    }
+
+    private fun genObjectCreation(expr: ObjectCreation): String {
+        val typeName = typeToCpp(expr.type)
+        val args = buildArgList(expr.args, expr.trailingLambda)
+        return "$typeName($args)"
+    }
+
+    private fun genStringTemplate(expr: StringTemplate): String {
+        if (expr.parts.size == 1 && expr.parts[0] is LiteralStringPart)
+            return "\"${escapeString((expr.parts[0] as LiteralStringPart).value)}\""
+
+        // Build via ostringstream in a lambda
+        val sub = StringBuilder()
+        sub.append("[&]() -> std::string { ostringstream _ss; ")
+        for (part in expr.parts) {
+            when (part) {
+                is LiteralStringPart   -> sub.append("_ss << \"${escapeString(part.value)}\"; ")
+                is ExpressionStringPart -> sub.append("_ss << ${genExpr(part.expr)}; ")
+            }
+        }
+        sub.append("return _ss.str(); }()")
+        return sub.toString()
+    }
+
+    // ─── Lambda helpers ──────────────────────────────────────────────────────
+
+    /**
+     * Generates a C++ lambda expression for [lambda].
+     * Single-statement lambdas become `[&](...) { return expr; }`.
+     */
+    fun genLambdaAsCppLambda(lambda: LambdaExpression): String {
+        val params = lambdaParams(lambda)
+        val body = lambda.body
+        return buildString {
+            append("[&]($params)")
+            if (body.size == 1 && body[0] is ExpressionStatement) {
+                val innerExpr = (body[0] as ExpressionStatement).expr
+                if (innerExpr is BreakJumpExpr || innerExpr is ContinueJumpExpr) {
+                    // goto statements should not be wrapped with return
+                    append(" { ${genExpr(innerExpr)}; }")
+                } else {
+                    val e = genExpr(innerExpr)
+                    append(" { return $e; }")
+                }
+            } else {
+                append(" {")
+                val sub = CodeGenerator(config)
+                body.forEach { sub.genStatement(it) }
+                append("\n")
+                append(sub.out.toString().trimEnd())
+                append("\n}")
+            }
+        }
+    }
+
+    /**
+     * Returns a callable expression from [lambda] — either the full lambda or,
+     * for a single-expression body, just the expression text wrapped in a lambda.
+     */
+    fun genLambdaBody(lambda: LambdaExpression): String = genLambdaAsCppLambda(lambda)
+
+    /**
+     * Generates the *statements* inside a lambda body as inline C++ text (for
+     * use inside `[&]() { ... }()` blocks).
+     */
+    fun genLambdaBodyStatements(lambda: LambdaExpression): String {
+        val sub = CodeGenerator(config)
+        lambda.body.forEach { sub.genStatement(it) }
+        return sub.out.toString().trimEnd()
+    }
+
+    private fun lambdaParams(lambda: LambdaExpression): String {
+        if (lambda.params.isEmpty()) {
+            // If the body references implicit `it`, add _it as parameter
+            if (lambdaBodyUsesIt(lambda.body)) return "auto _it"
+            return ""
+        }
+        return lambda.params.joinToString(", ") { p ->
+            val t = if (p.type != null) typeToCpp(p.type) else "auto"
+            "$t ${if (p.name == "it") "_it" else p.name}"
+        }
+    }
+
+    /** Checks whether a list of statements references `it` (the implicit lambda parameter). */
+    private fun lambdaBodyUsesIt(stmts: List<Statement>): Boolean {
+        fun exprUsesIt(expr: Expression): Boolean = when (expr) {
+            is NameReference -> expr.name == "it"
+            is BinaryExpression -> exprUsesIt(expr.left) || exprUsesIt(expr.right)
+            is PrefixExpression -> exprUsesIt(expr.expr)
+            is PostfixExpression -> exprUsesIt(expr.expr)
+            is CallExpression -> exprUsesIt(expr.callee) || expr.args.any { exprUsesIt(it.value) }
+            is MethodCallExpression -> exprUsesIt(expr.receiver) || expr.args.any { exprUsesIt(it.value) }
+            is PropertyAccessExpr -> exprUsesIt(expr.receiver)
+            is IndexAccess -> exprUsesIt(expr.receiver) || exprUsesIt(expr.index)
+            is IfExpression -> exprUsesIt(expr.condition)
+            is ElvisExpression -> exprUsesIt(expr.left) || exprUsesIt(expr.right)
+            is TypeCheckExpression -> exprUsesIt(expr.expr)
+            is TypeCastExpression -> exprUsesIt(expr.expr)
+            is ReturnJumpExpr -> expr.value?.let { exprUsesIt(it) } ?: false
+            is ThrowJumpExpr -> exprUsesIt(expr.expr)
+            is ObjectCreation -> expr.args.any { exprUsesIt(it.value) }
+            is StringTemplate -> expr.parts.any { it is ExpressionStringPart && exprUsesIt(it.expr) }
+            else -> false
+        }
+        fun stmtUsesIt(stmt: Statement): Boolean = when (stmt) {
+            is ExpressionStatement -> exprUsesIt(stmt.expr)
+            is ReturnStatement -> stmt.value?.let { exprUsesIt(it) } ?: false
+            is LocalProperty -> stmt.initializer?.let { exprUsesIt(it) } ?: false
+            is Assignment -> exprUsesIt(stmt.target) || exprUsesIt(stmt.value)
+            is IfStatement -> exprUsesIt(stmt.condition) || stmt.thenBranch.any { stmtUsesIt(it) } || (stmt.elseBranch?.any { stmtUsesIt(it) } ?: false)
+            is ForStatement -> stmt.body.any { stmtUsesIt(it) }
+            is WhileStatement -> exprUsesIt(stmt.condition) || stmt.body.any { stmtUsesIt(it) }
+            else -> false
+        }
+        return stmts.any { stmtUsesIt(it) }
+    }
+
+    // resolve `it` → `_it` inside lambda body text
+    // (handled via param renaming above)
+
+    // ─── Stdlib generation methods (called from StdlibMapper) ────────────────
+
+    fun genRepeat(n: String, lambda: LambdaExpression): String {
+        val indexVar = lambda.params.firstOrNull()?.name?.let {
+            if (it == "it") "_it" else it
+        } ?: "_i"
+        val sub = CodeGenerator(config)
+        sub.emit("for (int $indexVar = 0; $indexVar < $n; $indexVar++) {")
+        sub.indent { lambda.body.forEach { sub.genStatement(it) } }
+        sub.emit("}")
+        return "[&]() { ${sub.out.toString().trimEnd()} }()"
+    }
+
+    fun genForEach(receiver: String, lambda: LambdaExpression, indexed: Boolean): String {
+        val elemVar = lambda.params.getOrNull(0)?.name?.let { if (it == "it") "_it" else it } ?: "_it"
+        val idxVar  = if (indexed) lambda.params.getOrNull(1)?.name ?: "_idx" else null
+        val sub = CodeGenerator(config)
+        // Push forEach label so return@forEach → continue
+        sub.inlineLambdaLabels.addLast("forEach")
+        if (indexed) sub.inlineLambdaLabels.addLast("forEachIndexed")
+        // Also copy outer pending goto labels context
+        sub.pendingGotoLabels.addAll(pendingGotoLabels)
+        if (indexed && idxVar != null) {
+            sub.emit("{ int $idxVar = 0; for (auto& $elemVar : $receiver) {")
+            sub.indent {
+                lambda.body.forEach { sub.genStatement(it) }
+                sub.emit("$idxVar++;")
+            }
+            sub.emit("} }")
+        } else {
+            sub.emit("for (auto& $elemVar : $receiver) {")
+            sub.indent { lambda.body.forEach { sub.genStatement(it) } }
+            sub.emit("}")
+        }
+        // Merge back any goto labels the sub-generator registered
+        pendingGotoLabels.addAll(sub.pendingGotoLabels)
+        return "[&]() { ${sub.out.toString().trimEnd()} }()"
+    }
+
+    fun genMap(receiver: String, lambda: LambdaExpression, indexed: Boolean = false): String {
+        val elemVar = lambda.params.getOrNull(0)?.name?.let { if (it == "it") "_it" else it } ?: "_it"
+        val transform = genLambdaAsCppLambda(lambda)
+        return "[&]() { auto _r = vector<decay_t<decltype($transform($receiver.front()))>>(); " +
+               "_r.reserve($receiver.size()); " +
+               "for (auto& $elemVar : $receiver) _r.push_back($transform($elemVar)); " +
+               "return _r; }()"
+    }
+
+    fun genFilter(receiver: String, lambda: LambdaExpression, indexed: Boolean = false, negated: Boolean = false): String {
+        val elemVar = lambda.params.getOrNull(0)?.name?.let { if (it == "it") "_it" else it } ?: "_it"
+        val pred = genLambdaAsCppLambda(lambda)
+        val check = if (negated) "!$pred($elemVar)" else "$pred($elemVar)"
+        return "[&]() { auto _r = vector<decay_t<decltype($receiver.front())>>(); " +
+               "for (auto& $elemVar : $receiver) if ($check) _r.push_back($elemVar); " +
+               "return _r; }()"
+    }
+
+    fun genAny(receiver: String, lambda: LambdaExpression): String {
+        val pred = genLambdaAsCppLambda(lambda)
+        return "any_of($receiver.begin(), $receiver.end(), $pred)"
+    }
+
+    fun genAll(receiver: String, lambda: LambdaExpression): String {
+        val pred = genLambdaAsCppLambda(lambda)
+        return "all_of($receiver.begin(), $receiver.end(), $pred)"
+    }
+
+    fun genNone(receiver: String, lambda: LambdaExpression): String {
+        val pred = genLambdaAsCppLambda(lambda)
+        return "none_of($receiver.begin(), $receiver.end(), $pred)"
+    }
+
+    fun genCountIf(receiver: String, lambda: LambdaExpression): String {
+        val pred = genLambdaAsCppLambda(lambda)
+        return "(int)count_if($receiver.begin(), $receiver.end(), $pred)"
+    }
+
+    fun genFirstIf(receiver: String, lambda: LambdaExpression): String {
+        val pred = genLambdaAsCppLambda(lambda)
+        return "(*find_if($receiver.begin(), $receiver.end(), $pred))"
+    }
+
+    fun genLastIf(receiver: String, lambda: LambdaExpression): String {
+        val pred = genLambdaAsCppLambda(lambda)
+        return "(*find_if($receiver.rbegin(), $receiver.rend(), $pred))"
+    }
+
+    fun genReduce(receiver: String, lambda: LambdaExpression): String {
+        val f = genLambdaAsCppLambda(lambda)
+        return "[&]() { auto _r = $receiver.front(); " +
+               "for (int _i = 1; _i < (int)$receiver.size(); _i++) _r = $f(_r, $receiver[_i]); " +
+               "return _r; }()"
+    }
+
+    fun genFold(receiver: String, initial: String, lambda: LambdaExpression): String {
+        val f = genLambdaAsCppLambda(lambda)
+        return "[&]() { auto _r = $initial; " +
+               "for (auto& _x : $receiver) _r = $f(_r, _x); " +
+               "return _r; }()"
+    }
+
+    fun genFlatMap(receiver: String, lambda: LambdaExpression): String {
+        val f = genLambdaAsCppLambda(lambda)
+        return "[&]() { auto _r = vector<decay_t<decltype($f($receiver.front()).front())>>(); " +
+               "for (auto& _x : $receiver) { auto _sub = $f(_x); _r.insert(_r.end(), _sub.begin(), _sub.end()); } " +
+               "return _r; }()"
+    }
+
+    fun genMapNotNull(receiver: String, lambda: LambdaExpression): String {
+        val f = genLambdaAsCppLambda(lambda)
+        return "[&]() { auto _r = vector<remove_pointer_t<decltype($f($receiver.front()))>>(); " +
+               "for (auto& _x : $receiver) { auto _v = $f(_x); if (_v != nullptr) _r.push_back(*_v); } " +
+               "return _r; }()"
+    }
+
+    fun genJoinToString(receiver: String, sep: String, transform: LambdaExpression?): String {
+        val transformPart = if (transform != null) {
+            val f = genLambdaAsCppLambda(transform)
+            "for (int _i = 0; _i < (int)$receiver.size(); _i++) { if (_i) _ss << $sep; _ss << $f($receiver[_i]); }"
+        } else {
+            "for (int _i = 0; _i < (int)$receiver.size(); _i++) { if (_i) _ss << $sep; _ss << $receiver[_i]; }"
+        }
+        return "[&]() -> string { ostringstream _ss; $transformPart return _ss.str(); }()"
+    }
+
+    fun genJoinToCout(receiver: String, sep: String, transform: LambdaExpression?, newline: Boolean): String {
+        val suffix = if (newline) " cout << '\\n';" else ""
+        val elemPart = if (transform != null) {
+            val f = genLambdaAsCppLambda(transform)
+            "cout << $f($receiver[_i]);"
+        } else "cout << $receiver[_i];"
+        return "[&]() { for (int _i = 0; _i < (int)$receiver.size(); _i++) { if (_i) cout << $sep; $elemPart }$suffix }()"
+    }
+
+    fun genLambdaAsLoopInit(lambda: LambdaExpression, size: String, elemType: String): String {
+        val idxVar = lambda.params.getOrNull(0)?.name ?: "_i"
+        val bodyExpr = if (lambda.body.size == 1 && lambda.body[0] is ExpressionStatement)
+            genExpr((lambda.body[0] as ExpressionStatement).expr)
+        else "[&]() { ${genLambdaBodyStatements(lambda)} }()"
+        return "[&]() { vector<$elemType> _v($size); for (int $idxVar = 0; $idxVar < $size; $idxVar++) _v[$idxVar] = $bodyExpr; return _v; }()"
+    }
+
+    fun genBuildString(lambda: LambdaExpression): String {
+        // The lambda body uses `this` or `it` as a StringBuilder.
+        // We'll rename to a local ostringstream.
+        val sub = CodeGenerator(config)
+        sub.emit("ostringstream _sb;")
+        // Replace any reference to the implicit builder
+        lambda.body.forEach { sub.genStatement(it) }
+        sub.emit("return _sb.str();")
+        return "[&]() -> string { ${sub.out.toString().trimEnd()} }()"
+    }
+
+    fun genWithScope(receiver: String, lambda: LambdaExpression): String {
+        // `with(obj) { ... }` – the lambda body can refer to obj's members without receiver
+        // We generate: [&]() { auto& _recv = receiver; ... }()
+        val sub = CodeGenerator(config)
+        sub.emit("auto& _recv = $receiver;")
+        lambda.body.forEach { sub.genStatement(it) }
+        return "[&]() -> auto { ${sub.out.toString().trimEnd()} }()"
+    }
+
+    fun genLet(receiver: String, lambda: LambdaExpression): String {
+        val paramName = lambda.params.getOrNull(0)?.name?.let { if (it == "it") "_it" else it } ?: "_it"
+        val sub = CodeGenerator(config)
+        sub.emit("auto& $paramName = $receiver;")
+        lambda.body.forEach { sub.genStatement(it) }
+        return "[&]() -> auto { ${sub.out.toString().trimEnd()} }()"
+    }
+
+    fun genAlso(receiver: String, lambda: LambdaExpression): String {
+        val paramName = lambda.params.getOrNull(0)?.name?.let { if (it == "it") "_it" else it } ?: "_it"
+        val sub = CodeGenerator(config)
+        sub.emit("auto& $paramName = $receiver;")
+        lambda.body.forEach { sub.genStatement(it) }
+        sub.emit("return $paramName;")
+        return "[&]() -> auto { ${sub.out.toString().trimEnd()} }()"
+    }
+
+    fun genApply(receiver: String, lambda: LambdaExpression): String {
+        val sub = CodeGenerator(config)
+        lambda.body.forEach { sub.genStatement(it) }
+        return "[&]() -> auto { auto& _self = $receiver; ${sub.out.toString().trimEnd()} return _self; }()"
+    }
+
+    fun genRunReceiver(receiver: String, lambda: LambdaExpression): String {
+        val sub = CodeGenerator(config)
+        lambda.body.forEach { sub.genStatement(it) }
+        return "[&]() -> auto { auto& _self = $receiver; ${sub.out.toString().trimEnd()} }()"
+    }
+
+    // ─── Type helpers ─────────────────────────────────────────────────────────
+
+    /**
+     * Infers the C++ type from an initializer expression.
+     * Used for struct members where `auto` is not allowed in C++.
+     * Falls back to `decltype(init)` when the type cannot be determined statically.
+     */
+    private fun inferTypeFromInitializer(init: Expression?): String {
+        if (init == null) return "auto"  // shouldn't happen for member properties, but fallback
+        return when (init) {
+            is IntLiteral       -> "int"
+            is LongLiteral      -> "long long"
+            is DoubleLiteral    -> "double"
+            is FloatLiteral     -> "float"
+            is BooleanLiteral   -> "bool"
+            is CharLiteral      -> "char"
+            is StringLiteral    -> "string"
+            is StringTemplate   -> "string"
+            is CallExpression   -> {
+                val callee = init.callee
+                if (callee is NameReference) {
+                    val name = callee.name
+                    // Try to infer from known stdlib calls
+                    val typeArgs = init.typeArgs
+                    when (name) {
+                        "mutableListOf", "listOf", "arrayListOf", "arrayOf" -> {
+                            val elem = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"
+                            "vector<$elem>"
+                        }
+                        "mutableSetOf", "setOf", "hashSetOf", "sortedSetOf" -> {
+                            val elem = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"
+                            "set<$elem>"
+                        }
+                        "mutableMapOf", "mapOf", "hashMapOf" -> {
+                            val k = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"
+                            val v = if (typeArgs.size > 1) typeToCpp(typeArgs[1]) else "int"
+                            "map<$k, $v>"
+                        }
+                        "TreeSet"       -> { val e = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"; "set<$e>" }
+                        "TreeMap"       -> { val k = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"; val v = if (typeArgs.size > 1) typeToCpp(typeArgs[1]) else "int"; "map<$k, $v>" }
+                        "HashMap"       -> { val k = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"; val v = if (typeArgs.size > 1) typeToCpp(typeArgs[1]) else "int"; "unordered_map<$k, $v>" }
+                        "HashSet"       -> { val e = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"; "unordered_set<$e>" }
+                        "ArrayDeque"    -> { val e = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"; "deque<$e>" }
+                        "PriorityQueue" -> { val e = if (typeArgs.isNotEmpty()) typeToCpp(typeArgs[0]) else "int"; "priority_queue<$e>" }
+                        "StringBuilder" -> "ostringstream"
+                        else -> "decltype(${genExpr(init)})"
+                    }
+                } else "decltype(${genExpr(init)})"
+            }
+            is ObjectCreation -> typeToCpp(init.type)
+            else -> "decltype(${genExpr(init)})"
+        }
+    }
+
+    fun typeToCpp(type: KotlinType): String = TypeResolver.toCpp(type, config)
+
+    private fun retTypeToCpp(fn: FunctionDecl): String {
+        return when {
+            fn.returnType == null         -> "auto"
+            fn.returnType == KotlinType.Unit -> "void"
+            else                          -> typeToCpp(fn.returnType)
+        }
+    }
+
+    private fun paramToCpp(p: Parameter): String {
+        val type = if (p.type != null) typeToCpp(p.type) else "auto"
+        val vararg = if (p.isVararg) "..." else ""
+        return "$type$vararg ${p.name}"
+    }
+
+    // ─── String escaping ─────────────────────────────────────────────────────
+
+    private fun escapeString(s: String): String = s
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+
+    private fun escapeChar(c: Char): String = when (c) {
+        '\'' -> "\\'"
+        '\\' -> "\\\\"
+        '\n' -> "\\n"
+        '\r' -> "\\r"
+        '\t' -> "\\t"
+        else -> c.toString()
+    }
+
+    // ─── Name sanitization ────────────────────────────────────────────────────
+
+    private fun sanitizeName(name: String): String = when (name) {
+        "it"        -> "_it"
+        "new"       -> "_new"
+        "delete"    -> "_delete"
+        "class"     -> "_class"
+        "template"  -> "_template"
+        "namespace" -> "_namespace"
+        "register"  -> "_register"
+        "volatile"  -> "_volatile"
+        "nullptr"   -> "_nullptr"
+        else        -> name
+    }
+
+    companion object {
+        private const val INDENT = "    "
+    }
+}
+

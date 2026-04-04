@@ -1681,22 +1681,24 @@ class CodeGenerator(val config: Config = Config.default) {
     }
 
     fun genJoinToString(receiver: String, sep: String, transform: LambdaExpression?): String {
+        // Cache receiver in a local to avoid re-evaluating complex expressions (e.g. map results)
         val transformPart = if (transform != null) {
             val f = genLambdaAsCppLambda(transform)
-            "for (int _i = 0; _i < (int)$receiver.size(); _i++) { if (_i) _ss << $sep; _ss << $f($receiver[_i]); }"
+            "auto&& _c = $receiver; for (int _i = 0; _i < (int)_c.size(); _i++) { if (_i) _ss << $sep; _ss << $f(_c[_i]); }"
         } else {
-            "for (int _i = 0; _i < (int)$receiver.size(); _i++) { if (_i) _ss << $sep; _ss << $receiver[_i]; }"
+            "auto&& _c = $receiver; for (int _i = 0; _i < (int)_c.size(); _i++) { if (_i) _ss << $sep; _ss << _c[_i]; }"
         }
         return "[&]() -> string { ostringstream _ss; $transformPart return _ss.str(); }()"
     }
 
     fun genJoinToCout(receiver: String, sep: String, transform: LambdaExpression?, newline: Boolean): String {
         val suffix = if (newline) " cout << '\\n';" else ""
+        // Cache receiver in a local to avoid re-evaluating complex expressions
         val elemPart = if (transform != null) {
             val f = genLambdaAsCppLambda(transform)
-            "cout << $f($receiver[_i]);"
-        } else "cout << $receiver[_i];"
-        return "[&]() { for (int _i = 0; _i < (int)$receiver.size(); _i++) { if (_i) cout << $sep; $elemPart }$suffix }()"
+            "cout << $f(_c[_i]);"
+        } else "cout << _c[_i];"
+        return "[&]() { auto&& _c = $receiver; for (int _i = 0; _i < (int)_c.size(); _i++) { if (_i) cout << $sep; $elemPart }$suffix }()"
     }
 
     fun genLambdaAsLoopInit(lambda: LambdaExpression, size: String, elemType: String): String {

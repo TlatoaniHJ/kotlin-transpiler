@@ -78,11 +78,21 @@ class CodeGenerator(val config: Config = Config.default) {
     // Tracks locally defined function names (to avoid stdlib mapping conflicts)
     private val localFunctionNames = mutableSetOf<String>()
 
+    // Tracks locally declared variable names (to distinguish from class members in pointer checks)
+    private val localVarNames = mutableSetOf<String>()
+
     // Tracks user-defined class names (to avoid constructor/method mapping conflicts)
     private val userDefinedClassNames = mutableSetOf<String>()
 
     // Tracks variable names whose type is a user-defined class (skip stdlib method mapping)
     private val userClassVars = mutableSetOf<String>()
+
+    // Tracks variable/member names whose type is a collection of user-defined class elements
+    // (e.g. MutableList<Edge>, Array<Node>). Indexing these yields a user class instance.
+    private val userClassCollectionVars = mutableSetOf<String>()
+
+    // Deferred out-of-line method definitions (emitted after all class structs)
+    private val deferredMethodDefs = mutableListOf<String>()
 
     // Tracks variable/member names that are pointers to user-defined classes
     // (lateinit members, nullable class-typed members). Access uses -> instead of .
@@ -91,6 +101,9 @@ class CodeGenerator(val config: Config = Config.default) {
     // Tracks which constructor parameter indices need pointer semantics (user-defined class types).
     // Key: class name, Value: set of parameter indices that are pointers.
     private val classPointerCtorParams = mutableMapOf<String, Set<Int>>()
+
+    // Tracks C++ types of class members: "ClassName.memberName" → "C++ type"
+    private val classMemberTypes = mutableMapOf<String, String>()
 
     /** Copy variable tracking state from parent generator to this sub-generator. */
     fun inheritTrackingFrom(parent: CodeGenerator) {
@@ -101,8 +114,10 @@ class CodeGenerator(val config: Config = Config.default) {
         localFunctionNames.addAll(parent.localFunctionNames)
         userDefinedClassNames.addAll(parent.userDefinedClassNames)
         userClassVars.addAll(parent.userClassVars)
+        userClassCollectionVars.addAll(parent.userClassCollectionVars)
         pointerMembers.addAll(parent.pointerMembers)
         classPointerCtorParams.putAll(parent.classPointerCtorParams)
+        classMemberTypes.putAll(parent.classMemberTypes)
     }
 
     private fun createSubGenerator(): CodeGenerator {
@@ -150,18 +165,10 @@ class CodeGenerator(val config: Config = Config.default) {
         // Collect by-value dependencies: member types that are user-defined classes and NOT pointers
         fun byValueDeps(cls: ClassDecl): Set<String> {
             val deps = mutableSetOf<String>()
-            // Constructor params (val/var fields stored by value)
-            for (p in cls.primaryConstructor) {
-                val typeName = when (p.type) {
-                    is KotlinType.Simple -> (p.type as KotlinType.Simple).name
-                    is KotlinType.Generic -> (p.type as KotlinType.Generic).name
-                    else -> null
-                }
-                // Nullable types and lateinit are pointers — not by-value deps
-                if (typeName != null && typeName in classNames && p.type !is KotlinType.Nullable) {
-                    deps.add(typeName)
-                }
-            }
+            // Constructor params: user-defined class types are always stored as pointers,
+            // so they don't create by-value dependencies. Only non-class types would,
+            // but those can't be user-defined class names anyway. Skip all class-typed params.
+            // (Previously this added them as deps, but genClassDecl always emits them as pointers.)
             // Member properties
             for (m in cls.members.filterIsInstance<MemberProperty>()) {
                 val typeName = when (m.decl.type) {
@@ -332,6 +339,15 @@ class CodeGenerator(val config: Config = Config.default) {
             }
         }
         for (obj in objects) genObjectDecl(obj)
+
+        // Emit deferred out-of-line method definitions (after all class structs are complete)
+        if (deferredMethodDefs.isNotEmpty()) {
+            emit("")
+            for (def in deferredMethodDefs) {
+                emitRaw(def)
+                emit("")
+            }
+        }
 
         // Emit any remaining late props (shouldn't happen, but safety net)
         val remainingLateProps = lateProps.indices.filter { it !in emittedLateProps }
@@ -565,7 +581,8 @@ class CodeGenerator(val config: Config = Config.default) {
         // Direct variable reference that's a known user-class instance
         if (expr is NameReference && expr.name in userClassVars) return true
         // Direct variable reference that's a pointer member (pointing to a user-defined class)
-        if (expr is NameReference && expr.name in pointerMembers) return true
+        // but NOT if shadowed by a local variable of a different type
+        if (expr is NameReference && expr.name in pointerMembers && expr.name !in localVarNames) return true
         // Property access whose result is a pointer member (e.g. node.left)
         if (expr is PropertyAccessExpr && expr.name in pointerMembers) return true
         // !! on a user-class variable or pointer member
@@ -577,7 +594,7 @@ class CodeGenerator(val config: Config = Config.default) {
 
     /** Check if an expression refers to a pointer member (for arrow access detection). */
     private fun isExprPointerMember(expr: Expression): Boolean = when (expr) {
-        is NameReference -> expr.name in pointerMembers
+        is NameReference -> expr.name in pointerMembers && expr.name !in localVarNames
         is PropertyAccessExpr -> expr.name in pointerMembers
         is PostfixExpression -> if (expr.op == PostfixOp.NotNull) isExprPointerMember(expr.expr) else false
         else -> false
@@ -649,10 +666,12 @@ class CodeGenerator(val config: Config = Config.default) {
                 if (isPointerField) {
                     emit("${typeToCpp(f.type)}* ${sanitizeName(f.name)};")
                     pointerMembers.add(sanitizeName(f.name))
+                    classMemberTypes["${cls.name}.${sanitizeName(f.name)}"] = "${typeToCpp(f.type)}*"
                 } else {
                     // Don't use const for val fields — it deletes copy/move assignment
                     // operators, breaking storage in vectors/collections.
                     emit("${typeToCpp(f.type)} ${sanitizeName(f.name)};")
+                    classMemberTypes["${cls.name}.${sanitizeName(f.name)}"] = typeToCpp(f.type)
                 }
             }
             // Non-field constructor params: NOT emitted as members, only available in constructor
@@ -670,6 +689,19 @@ class CodeGenerator(val config: Config = Config.default) {
                 if (dependsOnCtorParam) ctorInitProps.add(mp) else defaultInitProps.add(mp)
             }
 
+            // Track member properties that are collections of user classes
+            for (mp in memberProps) {
+                val decl = mp.decl
+                // Check type annotation: List<Edge>, MutableList<Node>, etc.
+                if (decl.type is KotlinType.Generic && (decl.type as KotlinType.Generic).typeArgs.any { isUserDefinedClassType(it) }) {
+                    userClassCollectionVars.add(sanitizeName(decl.name))
+                }
+                // Check initializer: mutableListOf<Edge>()
+                if (decl.initializer != null && isUserClassCollectionInit(decl.initializer)) {
+                    userClassCollectionVars.add(sanitizeName(decl.name))
+                }
+            }
+
             // Emit member properties with default initialization
             for (mp in defaultInitProps) {
                 if (shouldBePointer(mp.decl)) {
@@ -677,6 +709,7 @@ class CodeGenerator(val config: Config = Config.default) {
                     val baseType = pointerBaseType(mp.decl.type)
                     emit("$baseType* ${sanitizeName(mp.decl.name)} = nullptr;")
                     pointerMembers.add(sanitizeName(mp.decl.name))
+                    classMemberTypes["${cls.name}.${sanitizeName(mp.decl.name)}"] = "$baseType*"
                 } else {
                     val init = if (mp.decl.initializer != null) " = ${genExpr(mp.decl.initializer)}" else ""
                     // Don't use const for val members that have no initializer and are assigned in init block
@@ -687,6 +720,7 @@ class CodeGenerator(val config: Config = Config.default) {
                     val typeStr = if (mp.decl.type != null) typeToCpp(mp.decl.type)
                                   else inferTypeFromInitializer(mp.decl.initializer)
                     emit("$constQ$typeStr ${sanitizeName(mp.decl.name)}$init;")
+                    classMemberTypes["${cls.name}.${sanitizeName(mp.decl.name)}"] = typeStr
                 }
             }
 
@@ -732,14 +766,20 @@ class CodeGenerator(val config: Config = Config.default) {
 
             emit("")
 
-            // Member functions
+            // Member functions — emit declarations only; full definitions are deferred
             for (m in cls.members) {
                 when (m) {
-                    is MemberFunction -> { genFunctionDecl(m.decl); emit("") }
+                    is MemberFunction -> {
+                        genMemberFunctionDeclaration(m.decl, cls.name)
+                        deferMemberFunctionDefinition(cls, m.decl)
+                    }
                     is CompanionObject -> {
                         emit("// companion object members:")
                         for (cm in m.members) {
-                            if (cm is MemberFunction) { emit("static "); genFunctionDecl(cm.decl) }
+                            if (cm is MemberFunction) {
+                                emit("static ${genMemberFunctionSignature(cm.decl)};")
+                                deferStaticMemberFunctionDefinition(cls, cm.decl)
+                            }
                         }
                     }
                     else -> {}
@@ -756,6 +796,182 @@ class CodeGenerator(val config: Config = Config.default) {
         }
         emit("};")
         emit("")
+    }
+
+    /** Generate just the signature string for a member function (no body, no semicolon). */
+    private fun genMemberFunctionSignature(fn: FunctionDecl): String {
+        val fnName = if (Modifier.Operator in fn.modifiers) {
+            kotlinOperatorToCpp(fn.name, fn.params.size) ?: fn.name
+        } else fn.name
+        val retType = retTypeToCpp(fn)
+        val params = fn.params.joinToString(", ") { paramToCpp(it) }
+        val isVirtual = Modifier.Override in fn.modifiers || Modifier.Open in fn.modifiers
+        val overrideSuffix = if (Modifier.Override in fn.modifiers) " override" else ""
+        val prefix = if (isVirtual) "virtual " else ""
+        return if (Modifier.Abstract in fn.modifiers) {
+            "virtual $retType $fnName($params) = 0"
+        } else {
+            "$prefix$retType $fnName($params)$overrideSuffix"
+        }
+    }
+
+    /** Emit a member function declaration (signature + semicolon) inside the struct.
+     *  For expression-body functions with no explicit return type, tries to infer a concrete
+     *  return type so the function can be called before its out-of-line definition. */
+    private fun genMemberFunctionDeclaration(fn: FunctionDecl, className: String? = null) {
+        if (fn.returnType == null && fn.body is ExpressionBody) {
+            val inferredType = inferExprType((fn.body as ExpressionBody).expr, className)
+            if (inferredType != null) {
+                val fnName = if (Modifier.Operator in fn.modifiers) {
+                    kotlinOperatorToCpp(fn.name, fn.params.size) ?: fn.name
+                } else fn.name
+                val params = fn.params.joinToString(", ") { paramToCpp(it) }
+                emit("$inferredType $fnName($params);")
+                return
+            }
+        }
+        emit("${genMemberFunctionSignature(fn)};")
+    }
+
+    /** Try to infer the C++ type of an expression from its structure. Returns null if unknown.
+     *  @param currentClass The name of the class this expression appears in (for member lookups). */
+    private fun inferExprType(expr: Expression, currentClass: String? = null): String? = when (expr) {
+        // Constructor call: Vec2(...) → Vec2
+        is CallExpression -> {
+            val calleeName = (expr.callee as? NameReference)?.name
+            if (calleeName != null && calleeName in userDefinedClassNames) calleeName
+            // max/min/maxOf/minOf: return type matches first argument
+            else if (calleeName in setOf("max", "min", "maxOf", "minOf") && expr.args.isNotEmpty())
+                inferExprType(expr.args[0].value, currentClass)
+            else null
+        }
+        // Property access: look up the member type if we know the receiver's class
+        is PropertyAccessExpr -> {
+            val receiverClass = inferExprClassName(expr.receiver, currentClass)
+            if (receiverClass != null) classMemberTypes["$receiverClass.${expr.name}"]
+            else null
+        }
+        // Binary expressions: result type matches operand types
+        is BinaryExpression -> inferExprType(expr.left, currentClass) ?: inferExprType(expr.right, currentClass)
+        // String template → string
+        is StringTemplate -> "string"
+        // Literals
+        is IntLiteral -> "int"
+        is LongLiteral -> "long long"
+        is DoubleLiteral -> "double"
+        is BooleanLiteral -> "bool"
+        is CharLiteral -> "char"
+        is StringLiteral -> "string"
+        else -> null
+    }
+
+    /** Try to infer the user-defined class name of an expression, given the current class context. */
+    private fun inferExprClassName(expr: Expression, currentClass: String? = null): String? = when (expr) {
+        is IndexAccess -> {
+            // array[i] — check if the member is a collection whose element type is a known class
+            val recv = expr.receiver
+            if (recv is NameReference && currentClass != null) {
+                val memberType = classMemberTypes["$currentClass.${recv.name}"]
+                if (memberType != null) {
+                    // Extract element type from vector<X>, std::vector<X>, etc.
+                    val match = Regex("""(?:vector|std::vector)<(\w+)>""").find(memberType)
+                    match?.groupValues?.get(1)
+                } else null
+            } else null
+        }
+        else -> null
+    }
+
+    /** Defer the out-of-line definition of a member function. */
+    private fun deferMemberFunctionDefinition(cls: ClassDecl, fn: FunctionDecl) {
+        // Abstract methods have no body to defer
+        if (Modifier.Abstract in fn.modifiers || fn.body == null) return
+
+        val fnName = if (Modifier.Operator in fn.modifiers) {
+            kotlinOperatorToCpp(fn.name, fn.params.size) ?: fn.name
+        } else fn.name
+        // Use inferred type if available (must match the declaration)
+        val retType = if (fn.returnType == null && fn.body is ExpressionBody) {
+            inferExprType((fn.body as ExpressionBody).expr, cls.name) ?: retTypeToCpp(fn)
+        } else retTypeToCpp(fn)
+        val params = fn.params.joinToString(", ") { paramToCpp(it) }
+
+        // Build template prefix and class qualifier
+        val templatePrefix = if (cls.typeParams.isNotEmpty()) {
+            val tParams = cls.typeParams.joinToString(", ") { "typename $it" }
+            "template<$tParams>\n"
+        } else ""
+        val classQualifier = if (cls.typeParams.isNotEmpty()) {
+            "${cls.name}<${cls.typeParams.joinToString(", ")}>"
+        } else cls.name
+
+        // Use a sub-generator to capture the body output
+        val sub = createSubGenerator()
+
+        // Track function parameters that are user-defined class types (same as genFunctionDecl)
+        for (p in fn.params) {
+            if (p.type != null && isUserDefinedClassType(p.type)) {
+                sub.userClassVars.add(p.name)
+            }
+        }
+
+        when (val body = fn.body) {
+            is ExpressionBody -> {
+                sub.emit("$templatePrefix$retType $classQualifier::$fnName($params) {")
+                sub.indent { sub.emit("return ${sub.genExpr(body.expr)};") }
+                sub.emit("}")
+            }
+            is BlockBody -> {
+                sub.emit("$templatePrefix$retType $classQualifier::$fnName($params) {")
+                sub.indent { body.statements.forEach { sub.genStatement(it) } }
+                sub.emit("}")
+            }
+            null -> {} // should not happen given the guard above
+        }
+
+        deferredMethodDefs.add(sub.out.toString())
+    }
+
+    /** Defer the out-of-line definition of a static (companion object) member function. */
+    private fun deferStaticMemberFunctionDefinition(cls: ClassDecl, fn: FunctionDecl) {
+        if (fn.body == null) return
+
+        val fnName = if (Modifier.Operator in fn.modifiers) {
+            kotlinOperatorToCpp(fn.name, fn.params.size) ?: fn.name
+        } else fn.name
+        val retType = retTypeToCpp(fn)
+        val params = fn.params.joinToString(", ") { paramToCpp(it) }
+
+        val templatePrefix = if (cls.typeParams.isNotEmpty()) {
+            val tParams = cls.typeParams.joinToString(", ") { "typename $it" }
+            "template<$tParams>\n"
+        } else ""
+        val classQualifier = if (cls.typeParams.isNotEmpty()) {
+            "${cls.name}<${cls.typeParams.joinToString(", ")}>"
+        } else cls.name
+
+        val sub = createSubGenerator()
+        for (p in fn.params) {
+            if (p.type != null && isUserDefinedClassType(p.type)) {
+                sub.userClassVars.add(p.name)
+            }
+        }
+
+        when (val body = fn.body) {
+            is ExpressionBody -> {
+                sub.emit("$templatePrefix$retType $classQualifier::$fnName($params) {")
+                sub.indent { sub.emit("return ${sub.genExpr(body.expr)};") }
+                sub.emit("}")
+            }
+            is BlockBody -> {
+                sub.emit("$templatePrefix$retType $classQualifier::$fnName($params) {")
+                sub.indent { body.statements.forEach { sub.genStatement(it) } }
+                sub.emit("}")
+            }
+            null -> {}
+        }
+
+        deferredMethodDefs.add(sub.out.toString())
     }
 
     private fun genLexicographicLt(fields: List<String>, other: String): String {
@@ -829,6 +1045,8 @@ class CodeGenerator(val config: Config = Config.default) {
     }
 
     private fun genLocalProperty(p: LocalProperty) {
+        // Track this as a local variable (to distinguish from class members in pointer checks)
+        localVarNames.add(p.name)
         // Track StringBuilder variables for .toString() → .str() mapping
         if (p.initializer != null && isStringBuilderInit(p.initializer)) {
             stringBuilderVars.add(p.name)
@@ -847,6 +1065,18 @@ class CodeGenerator(val config: Config = Config.default) {
         // Track variables initialized with user-defined class constructors
         if (p.initializer != null && isUserClassInit(p.initializer)) {
             userClassVars.add(p.name)
+        }
+        // Track variables whose explicit type is a user-defined class
+        if (p.type != null && isUserDefinedClassType(p.type)) {
+            userClassVars.add(p.name)
+        }
+        // Track collection variables whose elements are user-defined classes
+        if (p.initializer != null && isUserClassCollectionInit(p.initializer)) {
+            userClassCollectionVars.add(p.name)
+        }
+        // Track collections by explicit type: List<Edge>, MutableList<Node>, etc.
+        if (p.type is KotlinType.Generic && (p.type as KotlinType.Generic).typeArgs.any { isUserDefinedClassType(it) }) {
+            userClassCollectionVars.add(p.name)
         }
         // Detect variable shadowing: `var n = n` in Kotlin is valid but `auto n = n;` in C++
         // is self-referential. Skip the declaration — in C++ the outer variable (e.g. for-loop
@@ -938,7 +1168,35 @@ class CodeGenerator(val config: Config = Config.default) {
             }
             typeName in userDefinedClassNames
         }
+        // Index access on a user class collection yields a user class instance
+        is IndexAccess -> isExprUserClassCollection(expr.receiver)
+        // Property access on a user class that returns a pointer member (another user class)
+        is PropertyAccessExpr -> expr.name in pointerMembers
         else -> false
+    }
+
+    /** Check if an expression refers to a collection of user-defined class elements. */
+    private fun isExprUserClassCollection(expr: Expression): Boolean {
+        if (expr is NameReference && expr.name in userClassCollectionVars) return true
+        // Property access whose name is a known user class collection member
+        if (expr is PropertyAccessExpr && expr.name in userClassCollectionVars) return true
+        // Index access on a user class collection (nested indexing)
+        if (expr is IndexAccess && isExprUserClassCollection(expr.receiver)) return true
+        return false
+    }
+
+    /** Check if a collection initializer contains user-defined class elements. */
+    private fun isUserClassCollectionInit(expr: Expression): Boolean {
+        // mutableListOf<Edge>(), listOf<Edge>(), arrayListOf<Edge>(), etc.
+        if (expr is CallExpression && expr.typeArgs.any { isUserDefinedClassType(it) }) return true
+        // Array(n) { ... } or Array<Edge>(n) { ... }
+        if (expr is CallExpression && expr.callee is NameReference) {
+            val name = (expr.callee as NameReference).name
+            if (name == "Array" || name == "arrayOf" || name == "arrayOfNulls") {
+                if (expr.typeArgs.any { isUserDefinedClassType(it) }) return true
+            }
+        }
+        return false
     }
 
     /**
@@ -1045,7 +1303,8 @@ class CodeGenerator(val config: Config = Config.default) {
     /** Check if an assignment target refers to a pointer member. */
     private fun isAssignmentTargetPointer(target: Expression): Boolean {
         return when (target) {
-            is NameReference -> target.name in pointerMembers
+            // Bare name: only treat as pointer if it's a known pointer member AND not shadowed by a local variable
+            is NameReference -> target.name in pointerMembers && target.name !in localVarNames
             is PropertyAccessExpr -> target.name in pointerMembers
             else -> false
         }
@@ -1053,8 +1312,8 @@ class CodeGenerator(val config: Config = Config.default) {
 
     /** Check if an assignment RHS expression is already a pointer value (no & needed). */
     private fun isAssignmentValuePointer(expr: Expression): Boolean {
-        // Another pointer member variable
-        if (expr is NameReference && expr.name in pointerMembers) return true
+        // Another pointer member variable (but not if shadowed by a local variable)
+        if (expr is NameReference && expr.name in pointerMembers && expr.name !in localVarNames) return true
         // Property access to a pointer member (e.g. other.neighbor)
         if (expr is PropertyAccessExpr && expr.name in pointerMembers) return true
         // !! on a pointer (just strips null check)
@@ -1328,6 +1587,13 @@ class CodeGenerator(val config: Config = Config.default) {
     }
 
     private fun genPropertyAccess(expr: PropertyAccessExpr): String {
+        // Numeric type companion constants: Int.MAX_VALUE, Long.MIN_VALUE, etc.
+        if (expr.receiver is NameReference) {
+            val typeName = (expr.receiver as NameReference).name
+            val constMapping = numericConstant(typeName, expr.name)
+            if (constMapping != null) return constMapping
+        }
+
         val recv = genExpr(expr.receiver)
         val safe = expr.isSafe
 
@@ -2342,10 +2608,36 @@ class CodeGenerator(val config: Config = Config.default) {
 
     private fun retTypeToCpp(fn: FunctionDecl): String {
         return when {
-            fn.returnType == null         -> "auto"
+            fn.returnType == null         -> inferReturnType(fn)
             fn.returnType == KotlinType.Unit -> "void"
             else                          -> typeToCpp(fn.returnType)
         }
+    }
+
+    /** Infer the C++ return type when the Kotlin function has no explicit return type.
+     *  Block bodies with no return-with-value → void.
+     *  Expression bodies or block bodies with return values → auto. */
+    private fun inferReturnType(fn: FunctionDecl): String {
+        return when (val body = fn.body) {
+            is BlockBody -> if (blockHasReturnWithValue(body.statements)) "auto" else "void"
+            is ExpressionBody -> "auto"
+            null -> "void"
+        }
+    }
+
+    /** Check if a list of statements contains any return statement with a value. */
+    private fun blockHasReturnWithValue(stmts: List<Statement>): Boolean {
+        for (stmt in stmts) {
+            if (stmt is ReturnStatement && stmt.value != null) return true
+            // Check nested blocks
+            if (stmt is IfStatement) {
+                if (blockHasReturnWithValue(stmt.thenBranch)) return true
+                if (stmt.elseBranch != null && blockHasReturnWithValue(stmt.elseBranch)) return true
+            }
+            if (stmt is ForStatement && blockHasReturnWithValue(stmt.body)) return true
+            if (stmt is WhileStatement && blockHasReturnWithValue(stmt.body)) return true
+        }
+        return false
     }
 
     private fun paramToCpp(p: Parameter): String {
@@ -2372,6 +2664,52 @@ class CodeGenerator(val config: Config = Config.default) {
         else -> c.toString()
     }
 
+    /** Map Kotlin numeric companion constants (Int.MAX_VALUE, Long.MIN_VALUE, etc.) to C++ equivalents. */
+    private fun numericConstant(typeName: String, propName: String): String? = when (typeName) {
+        "Int" -> when (propName) {
+            "MAX_VALUE" -> "INT_MAX"
+            "MIN_VALUE" -> "INT_MIN"
+            else -> null
+        }
+        "Long" -> when (propName) {
+            "MAX_VALUE" -> "LLONG_MAX"
+            "MIN_VALUE" -> "LLONG_MIN"
+            else -> null
+        }
+        "Short" -> when (propName) {
+            "MAX_VALUE" -> "SHRT_MAX"
+            "MIN_VALUE" -> "SHRT_MIN"
+            else -> null
+        }
+        "Byte" -> when (propName) {
+            "MAX_VALUE" -> "SCHAR_MAX"
+            "MIN_VALUE" -> "SCHAR_MIN"
+            else -> null
+        }
+        "Double" -> when (propName) {
+            "MAX_VALUE" -> "DBL_MAX"
+            "MIN_VALUE" -> "DBL_MIN"
+            "POSITIVE_INFINITY" -> "numeric_limits<double>::infinity()"
+            "NEGATIVE_INFINITY" -> "(-numeric_limits<double>::infinity())"
+            "NaN" -> "numeric_limits<double>::quiet_NaN()"
+            else -> null
+        }
+        "Float" -> when (propName) {
+            "MAX_VALUE" -> "FLT_MAX"
+            "MIN_VALUE" -> "FLT_MIN"
+            "POSITIVE_INFINITY" -> "numeric_limits<float>::infinity()"
+            "NEGATIVE_INFINITY" -> "(-numeric_limits<float>::infinity())"
+            "NaN" -> "numeric_limits<float>::quiet_NaN()"
+            else -> null
+        }
+        "Char" -> when (propName) {
+            "MAX_VALUE" -> "CHAR_MAX"
+            "MIN_VALUE" -> "CHAR_MIN"
+            else -> null
+        }
+        else -> null
+    }
+
     // ─── Name sanitization ────────────────────────────────────────────────────
 
     private val cppReservedTypeNames = setOf(
@@ -2390,6 +2728,25 @@ class CodeGenerator(val config: Config = Config.default) {
         "register"  -> "_register"
         "volatile"  -> "_volatile"
         "nullptr"   -> "_nullptr"
+        "short"     -> "_short"
+        "long"      -> "_long"
+        "int"       -> "_int"
+        "float"     -> "_float"
+        "double"    -> "_double"
+        "char"      -> "_char"
+        "bool"      -> "_bool"
+        "unsigned"  -> "_unsigned"
+        "signed"    -> "_signed"
+        "auto"      -> "_auto"
+        "const"     -> "_const"
+        "static"    -> "_static"
+        "extern"    -> "_extern"
+        "struct"    -> "_struct"
+        "union"     -> "_union"
+        "enum"      -> "_enum"
+        "virtual"   -> "_virtual"
+        "friend"    -> "_friend"
+        "operator"  -> "_operator"
         in cppReservedTypeNames -> "_$name"
         else        -> name
     }

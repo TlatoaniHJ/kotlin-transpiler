@@ -434,7 +434,7 @@ object StdlibMapper {
             "distinct"  -> "[&]() { auto _v = $receiver; sort(_v.begin(), _v.end()); _v.erase(unique(_v.begin(), _v.end()), _v.end()); return _v; }()"
             "distinctBy"-> null
             "zip"       -> if (args.size == 1)
-                "[&]() { auto& _a = $receiver; auto& _b = ${arg(0)}; auto _n = min(_a.size(), _b.size()); vector<pair<decltype(_a[0]), decltype(_b[0])>> _r(_n); for (int _i = 0; _i < (int)_n; _i++) _r[_i] = {_a[_i], _b[_i]}; return _r; }()"
+                "[&]() { auto& _a = $receiver; auto& _b = ${arg(0)}; auto _n = min(_a.size(), _b.size()); vector<pair<decay_t<decltype(_a[0])>, decay_t<decltype(_b[0])>>> _r(_n); for (int _i = 0; _i < (int)_n; _i++) _r[_i] = {_a[_i], _b[_i]}; return _r; }()"
                 else null
             "take"      -> if (args.size == 1) "([&]() { auto&& _c = $receiver; return vector<decay_t<decltype(_c.front())>>(_c.begin(), _c.begin() + min((int)${arg(0)}, (int)_c.size())); }())" else null
             "drop"      -> if (args.size == 1) "([&]() { auto&& _c = $receiver; return vector<decay_t<decltype(_c.front())>>(_c.begin() + min((int)${arg(0)}, (int)_c.size()), _c.end()); }())" else null
@@ -503,7 +503,7 @@ object StdlibMapper {
 
     private fun buildListOf(typeArgs: List<KotlinType>, args: List<CallArgument>, gen: CodeGenerator): String {
         val elemsCpp = args.joinToString(", ") { gen.genExpr(it.value) }
-        val typeStr = if (typeArgs.isNotEmpty()) gen.typeToCpp(typeArgs[0]) else if (args.isNotEmpty()) "decltype(${gen.genExpr(args[0].value)})" else "int"
+        val typeStr = if (typeArgs.isNotEmpty()) gen.typeToCpp(typeArgs[0]) else if (args.isNotEmpty()) "decay_t<decltype(${gen.genExpr(args[0].value)})>" else "int"
         return if (args.isEmpty()) "vector<$typeStr>()" else "vector<$typeStr>{$elemsCpp}"
     }
 
@@ -514,7 +514,7 @@ object StdlibMapper {
 
     private fun buildSetOf(typeArgs: List<KotlinType>, args: List<CallArgument>, gen: CodeGenerator, ordered: Boolean): String {
         val elemsCpp = args.joinToString(", ") { gen.genExpr(it.value) }
-        val typeStr = if (typeArgs.isNotEmpty()) gen.typeToCpp(typeArgs[0]) else if (args.isNotEmpty()) "decltype(${gen.genExpr(args[0].value)})" else "int"
+        val typeStr = if (typeArgs.isNotEmpty()) gen.typeToCpp(typeArgs[0]) else if (args.isNotEmpty()) "decay_t<decltype(${gen.genExpr(args[0].value)})>" else "int"
         val container = if (ordered) "set" else "unordered_set"
         return if (args.isEmpty()) "$container<$typeStr>()" else "$container<$typeStr>{$elemsCpp}"
     }

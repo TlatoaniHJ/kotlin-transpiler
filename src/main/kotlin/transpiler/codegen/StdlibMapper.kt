@@ -91,6 +91,9 @@ object StdlibMapper {
             "Array" -> {
                 if (args.size == 1 && trailingLambda != null) {
                     gen.genLambdaAsLoopInit(trailingLambda, arg(0), "auto")
+                } else if (args.size == 2 && args[1].value is LambdaExpression) {
+                    // Array(n, ::Constructor) or Array(n, { i -> ... }) — lambda passed as arg
+                    gen.genLambdaAsLoopInit(args[1].value as LambdaExpression, arg(0), "auto")
                 } else null
             }
             "List" -> {
@@ -565,6 +568,15 @@ object StdlibMapper {
             return "cout << ${gen.genExpr(value)}.str()$suffix"
         }
 
-        return "cout << ${gen.genExpr(value)}$suffix"
+        val exprStr = gen.genExpr(value)
+        // Wrap in parens if the expression is a comparison or logical operator,
+        // because C++ `<<` binds tighter than `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`
+        val needsParens = value is BinaryExpression && value.op in setOf(
+            BinaryOp.Eq, BinaryOp.NotEq, BinaryOp.RefEq, BinaryOp.RefNotEq,
+            BinaryOp.Lt, BinaryOp.Gt, BinaryOp.LtEq, BinaryOp.GtEq,
+            BinaryOp.And, BinaryOp.Or
+        )
+        val wrappedExpr = if (needsParens) "($exprStr)" else exprStr
+        return "cout << $wrappedExpr$suffix"
     }
 }

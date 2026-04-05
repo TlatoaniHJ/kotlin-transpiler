@@ -982,6 +982,7 @@ class AntlrToAst : KotlinParserBaseVisitor<Any?>() {
                 mod.visibilityModifier()?.PROTECTED() != null -> result.add(Modifier.Protected)
                 mod.functionModifier()?.OPERATOR() != null   -> result.add(Modifier.Operator)
                 mod.functionModifier()?.INLINE() != null     -> result.add(Modifier.Inline)
+                mod.memberModifier()?.LATEINIT() != null      -> result.add(Modifier.Lateinit)
             }
         }
         return result

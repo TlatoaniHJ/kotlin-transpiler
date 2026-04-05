@@ -83,7 +83,7 @@ data class PropertyDecl(
 
 enum class Modifier {
     Override, Abstract, Open, Private, Protected, Public, Internal,
-    Operator, Inline, Suspend, Companion, Static, Final
+    Operator, Inline, Suspend, Companion, Static, Final, Lateinit
 }
 
 // ─── Statements ──────────────────────────────────────────────────────────────

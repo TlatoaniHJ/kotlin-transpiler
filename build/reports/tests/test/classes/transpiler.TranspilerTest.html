@@ -23,13 +23,13 @@
 <tr>
 <td>
 <div class="infoBox" id="tests">
-<div class="counter">23</div>
+<div class="counter">32</div>
 <p>tests</p>
 </div>
 </td>
 <td>
 <div class="infoBox" id="failures">
-<div class="counter">0</div>
+<div class="counter">1</div>
 <p>failures</p>
 </div>
 </td>
@@ -41,7 +41,7 @@
 </td>
 <td>
 <div class="infoBox" id="duration">
-<div class="counter">1m58.67s</div>
+<div class="counter">2m35.18s</div>
 <p>duration</p>
 </div>
 </td>
@@ -50,8 +50,8 @@
 </div>
 </td>
 <td>
-<div class="infoBox success" id="successRate">
-<div class="percent">100%</div>
+<div class="infoBox failures" id="successRate">
+<div class="percent">96%</div>
 <p>successful</p>
 </div>
 </td>
@@ -61,10 +61,456 @@
 <div id="tabs">
 <ul class="tabLinks">
 <li>
-<a href="#tab0">Tests</a>
+<a href="#tab0">Failed tests</a>
+</li>
+<li>
+<a href="#tab1">Tests</a>
 </li>
 </ul>
 <div id="tab0" class="tab">
+<h2>Failed tests</h2>
+<div class="test">
+<a name="allTests()[13]"></a>
+<h3 class="failures">example_dynamic_diameter</h3>
+<span class="code">
+<pre>org.opentest4j.AssertionFailedError: C++ compilation failed for example_dynamic_diameter:
+In file included from /var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:1:
+In file included from /Users/Tlatoani/Projects/kotlin-transpiler/include/bits/stdc++.h:5:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/chrono:837:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__chrono/formatter.h:23:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__chrono/ostream.h:31:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/ostream:189:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/format:195:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__format/container_adaptor.h:24:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/queue:272:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/deque:2602:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/functional:526:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/boyer_moore_searcher.h:27:
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:926:60: error: arithmetic on a pointer to an incomplete type 'Edge'
+  926 |       __alloc_traits::destroy(__alloc(), std::__to_address(--__soon_to_be_end));
+      |                                                            ^ ~~~~~~~~~~~~~~~~
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:920:5: note: in instantiation of member function 'std::vector&lt;Edge&gt;::__base_destruct_at_end' requested here
+  920 |     __base_destruct_at_end(this-&gt;__begin_);
+      |     ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:490:16: note: in instantiation of member function 'std::vector&lt;Edge&gt;::__clear' requested here
+  490 |         __vec_.__clear();
+      |                ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:501:67: note: in instantiation of member function 'std::vector&lt;Edge&gt;::__destroy_vector::operator()' requested here
+  501 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI ~vector() { __destroy_vector (*this)(); }
+      |                                                                   ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:102:26: note: in instantiation of member function 'std::vector&lt;Edge&gt;::~vector' requested here
+  102 |     vector&lt;Edge&gt; edges = vector&lt;Edge&gt;();
+      |                          ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:17:8: note: forward declaration of 'Edge'
+   17 | struct Edge;
+      |        ^
+In file included from /var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:1:
+In file included from /Users/Tlatoani/Projects/kotlin-transpiler/include/bits/stdc++.h:2:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:1810:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/for_each.h:16:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/movable_box.h:23:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1294:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/memory:927:
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/allocator.h:139:50: error: invalid application of 'sizeof' to an incomplete type 'Edge'
+  139 |       std::__libcpp_deallocate((void*)__p, __n * sizeof(_Tp), _LIBCPP_ALIGNOF(_Tp));
+      |                                                  ^~~~~~~~~~~
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/allocator_traits.h:289:9: note: in instantiation of member function 'std::allocator&lt;Edge&gt;::deallocate' requested here
+  289 |     __a.deallocate(__p, __n);
+      |         ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:492:25: note: in instantiation of member function 'std::allocator_traits&lt;std::allocator&lt;Edge&gt;&gt;::deallocate' requested here
+  492 |         __alloc_traits::deallocate(__vec_.__alloc(), __vec_.__begin_, __vec_.capacity());
+      |                         ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:501:67: note: in instantiation of member function 'std::vector&lt;Edge&gt;::__destroy_vector::operator()' requested here
+  501 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI ~vector() { __destroy_vector (*this)(); }
+      |                                                                   ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:102:26: note: in instantiation of member function 'std::vector&lt;Edge&gt;::~vector' requested here
+  102 |     vector&lt;Edge&gt; edges = vector&lt;Edge&gt;();
+      |                          ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:17:8: note: forward declaration of 'Edge'
+   17 | struct Edge;
+      |        ^
+In file included from /var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:1:
+In file included from /Users/Tlatoani/Projects/kotlin-transpiler/include/bits/stdc++.h:5:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/chrono:837:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__chrono/formatter.h:23:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__chrono/ostream.h:31:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/ostream:189:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/format:195:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__format/container_adaptor.h:24:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/queue:272:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/deque:2602:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/functional:526:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/boyer_moore_searcher.h:27:
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:598:47: error: arithmetic on a pointer to an incomplete type 'Edge'
+  598 |     return static_cast&lt;size_type&gt;(__end_cap() - this-&gt;__begin_);
+      |                                   ~~~~~~~~~~~ ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:492:78: note: in instantiation of member function 'std::vector&lt;Edge&gt;::capacity' requested here
+  492 |         __alloc_traits::deallocate(__vec_.__alloc(), __vec_.__begin_, __vec_.capacity());
+      |                                                                              ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:501:67: note: in instantiation of member function 'std::vector&lt;Edge&gt;::__destroy_vector::operator()' requested here
+  501 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI ~vector() { __destroy_vector (*this)(); }
+      |                                                                   ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:102:26: note: in instantiation of member function 'std::vector&lt;Edge&gt;::~vector' requested here
+  102 |     vector&lt;Edge&gt; edges = vector&lt;Edge&gt;();
+      |                          ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:17:8: note: forward declaration of 'Edge'
+   17 | struct Edge;
+      |        ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:113:20: error: member access into incomplete type 'Vertree'
+  113 |             vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));
+      |                    ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:21:8: note: forward declaration of 'Vertree'
+   21 | struct Vertree;
+      |        ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:115:63: error: member access into incomplete type 'Vertree'
+  115 |             parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
+      |                                                               ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:21:8: note: forward declaration of 'Vertree'
+   21 | struct Vertree;
+      |        ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:115:127: error: member access into incomplete type 'Vertree'
+  115 |             parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
+      |                                                                                                                               ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:21:8: note: forward declaration of 'Vertree'
+   21 | struct Vertree;
+      |        ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:115:171: error: member access into incomplete type 'Vertree'
+  115 |             parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
+      |                                                                                                                                                                           ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:21:8: note: forward declaration of 'Vertree'
+   21 | struct Vertree;
+      |        ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:148:16: error: cannot take the address of an rvalue of type 'int'
+  148 |         node = &amp;(node &gt;&gt; 1);
+      |                ^ ~~~~~~~~~
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:151:20: error: cannot take the address of an rvalue of type 'int'
+  151 |             node = &amp;(node &gt;&gt; 1);
+      |                    ^ ~~~~~~~~~
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:192:28: error: no viable overloaded '='
+  192 |             qodes[edge.ix] = edge.node;
+      |             ~~~~~~~~~~~~~~ ^ ~~~~~~~~~
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:97:8: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'Node *' to 'const Node' for 1st argument; dereference the argument with *
+   97 | struct Node {
+      |        ^~~~
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:97:8: note: candidate function (the implicit move assignment operator) not viable: no known conversion from 'Node *' to 'Node' for 1st argument; dereference the argument with *
+   97 | struct Node {
+      |        ^~~~
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:194:49: error: no member named 'size' in 'Edge'
+  194 |             edge.node-&gt;parentLength = (int)edge.size();
+      |                                            ~~~~ ^
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:195:20: error: no viable overloaded '='
+  195 |             dfs[j] = edge.node;
+      |             ~~~~~~ ^ ~~~~~~~~~
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:97:8: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'Node *' to 'const Node' for 1st argument; dereference the argument with *
+   97 | struct Node {
+      |        ^~~~
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:97:8: note: candidate function (the implicit move assignment operator) not viable: no known conversion from 'Node *' to 'Node' for 1st argument; dereference the argument with *
+   97 | struct Node {
+      |        ^~~~
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:201:13: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  201 |         node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;
+      |         ~~~~^~
+      |             .
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:201:42: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  201 |         node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;
+      |                                      ~~~~^~
+      |                                          .
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:203:39: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  203 |         for (auto k = 0; k &lt; (int)node-&gt;edges.size(); k++) {
+      |                                   ~~~~^~
+      |                                       .
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:204:17: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  204 |             node-&gt;edges[k].node-&gt;treeix = k;
+      |             ~~~~^~
+      |                 .
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:205:21: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  205 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {
+      |                 ~~~~^~
+      |                     .
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:205:51: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  205 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {
+      |                                               ~~~~^~
+      |                                                   .
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter3813404815353997679/test.cpp:205:82: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  205 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {
+      |                                                                              ~~~~^~
+      |                                                                                  .
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+
+
+Generated C++:
+#include &lt;bits/stdc++.h&gt;
+using namespace std;
+
+int nextInt() { int x; cin &gt;&gt; x; return x; }
+long long nextLong() { long long x; cin &gt;&gt; x; return x; }
+double nextDouble() { double x; cin &gt;&gt; x; return x; }
+float nextFloat() { float x; cin &gt;&gt; x; return x; }
+string nextToken() { string x; cin &gt;&gt; x; return x; }
+string nextLine() { string x; getline(cin, x); return x; }
+
+mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+mt19937_64 rng64(chrono::steady_clock::now().time_since_epoch().count());
+int randInt(int lo, int hi) { return uniform_int_distribution&lt;int&gt;(lo, hi)(rng); }
+long long randLong(long long lo, long long hi) { return uniform_int_distribution&lt;long long&gt;(lo, hi)(rng64); }
+double randDouble() { return uniform_real_distribution&lt;double&gt;(0.0, 1.0)(rng); }
+struct Node;
+struct Edge;
+struct Horval;
+struct Verval;
+struct Hortree;
+struct Vertree;
+
+struct Horval {
+    long long longest1;
+    long long longest2;
+    long long posAnswer;
+
+    Horval(long long longest1_, long long longest2_, long long posAnswer_) : longest1(longest1_), longest2(longest2_), posAnswer(posAnswer_) {
+    }
+
+    Horval operator+(Horval other) {
+        if (longest1 &gt; other.longest1) {
+            return Horval(longest1, max(longest2, other.longest1), max(posAnswer, other.posAnswer));
+        } else {
+            return Horval(other.longest1, max(longest1, other.longest2), max(posAnswer, other.posAnswer));
+        }
+    }
+
+    bool operator==(const Horval&amp; o) const { return longest1 == o.longest1 &amp;&amp; longest2 == o.longest2 &amp;&amp; posAnswer == o.posAnswer; }
+    bool operator&lt;(const Horval&amp; o) const { return longest1 &lt; o.longest1 || (longest1 == o.longest1 &amp;&amp; (longest2 &lt; o.longest2 || (longest2 == o.longest2 &amp;&amp; (posAnswer &lt; o.posAnswer)))); }
+};
+
+const auto HORIZONTAL_IDENTITY = Horval(0, 0, 0);
+
+struct Verval {
+    long long length;
+    long long longest;
+    long long longestToUse;
+    long long posAnswer;
+
+    Verval(long long length_, long long longest_, long long longestToUse_, long long posAnswer_) : length(length_), longest(longest_), longestToUse(longestToUse_), posAnswer(posAnswer_) {
+    }
+
+    auto operator*(Verval other) {
+        return Verval(length + other.length, max(longest, other.longest + length), max(longestToUse + other.length, other.longestToUse), max({posAnswer, other.posAnswer, longestToUse + other.longest}));
+    }
+
+    bool operator==(const Verval&amp; o) const { return length == o.length &amp;&amp; longest == o.longest &amp;&amp; longestToUse == o.longestToUse &amp;&amp; posAnswer == o.posAnswer; }
+    bool operator&lt;(const Verval&amp; o) const { return length &lt; o.length || (length == o.length &amp;&amp; (longest &lt; o.longest || (longest == o.longest &amp;&amp; (longestToUse &lt; o.longestToUse || (longestToUse == o.longestToUse &amp;&amp; (posAnswer &lt; o.posAnswer)))))); }
+};
+
+const auto VERTICAL_IDENTITY = Verval(0, 0, 0, 0);
+
+struct Hortree {
+    int length;
+    std::vector&lt;Horval&gt; _array;
+
+    Hortree(int amt) {
+        auto l = 1;
+        while (l &lt; amt) {
+            l *= 2;
+        }
+        length = l;
+        _array = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return HORIZONTAL_IDENTITY; }(0))&gt;&gt; _v; _v.reserve(length * 2); for (int _i = 0; _i &lt; length * 2; _i++) _v.push_back(HORIZONTAL_IDENTITY); return _v; }();
+    }
+
+    auto update(int index, Horval newVal) {
+        auto node = index + length;
+        _array[node] = newVal;
+        node = (node &gt;&gt; 1);
+        while (node &gt; 0) {
+            _array[node] = _array[2 * node] + _array[2 * node + 1];
+            node = (node &gt;&gt; 1);
+        }
+    }
+
+    auto longest() {
+        return _array[1].longest1;
+    }
+
+    auto posAnswer() {
+        return max(_array[1].longest1 + _array[1].longest2, _array[1].posAnswer);
+    }
+
+};
+
+struct Node {
+    int ix;
+    Node* parent = nullptr;
+    long long parentLength = -(1);
+    int subTreeSize = 1;
+    vector&lt;Edge&gt; edges = vector&lt;Edge&gt;();
+    Node* bestChild = nullptr;
+    Hortree* hortree = nullptr;
+    Vertree* vertree = nullptr;
+    decltype(-(1)) treeix = -(1);
+
+    Node(int ix_) : ix(ix_) {
+    }
+
+    auto update() {
+        if (parent-&gt;bestChild == this) {
+            vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));
+        } else {
+            parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
+        }
+    }
+
+};
+
+struct Edge {
+    Node* node;
+    long long length;
+    int ix;
+
+    Edge(Node* node_, long long length_, int ix_) : node(node_), length(length_), ix(ix_) {
+    }
+
+};
+
+struct Vertree {
+    Node* topNode;
+    int length;
+    std::vector&lt;Verval&gt; _array;
+
+    Vertree(Node* topNode_, int amt) : topNode(topNode_) {
+        auto l = 1;
+        while (l &lt; amt) {
+            l *= 2;
+        }
+        length = l;
+        _array = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return VERTICAL_IDENTITY; }(0))&gt;&gt; _v; _v.reserve(length * 2); for (int _i = 0; _i &lt; length * 2; _i++) _v.push_back(VERTICAL_IDENTITY); return _v; }();
+    }
+
+    auto update(int index, Verval newVal) {
+        auto node = index + length;
+        _array[node] = newVal;
+        node = &amp;(node &gt;&gt; 1);
+        while (node &gt; 0) {
+            _array[node] = _array[2 * node] * _array[2 * node + 1];
+            node = &amp;(node &gt;&gt; 1);
+        }
+    }
+
+    auto longest() {
+        return _array[1].longest;
+    }
+
+    auto posAnswer() {
+        return max(_array[1].longestToUse, _array[1].posAnswer);
+    }
+
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    cout &lt;&lt; boolalpha;
+    const auto n = nextInt();
+    const auto q = nextInt();
+    const auto w = nextLong();
+    auto nodes = [&amp;]() { vector&lt;Node&gt; _v; _v.reserve(n + 1); for (int _it = 0; _it &lt; n + 1; _it++) _v.push_back(Node(_it)); return _v; }();
+    nodes[1].parent = &amp;nodes[0];
+    nodes[1].edges.push_back(Edge(&amp;nodes[0], 0, 0));
+    for (auto i = 0; i &lt; n - 1; i++) {
+        const auto a = nextInt();
+        const auto b = nextInt();
+        const auto length = nextLong();
+        nodes[a].edges.push_back(Edge(&amp;nodes[b], length, i));
+        nodes[b].edges.push_back(Edge(&amp;nodes[a], length, i));
+    }
+    auto dfs = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return nodes[1]; }(0))&gt;&gt; _v; _v.reserve(n); for (int _i = 0; _i &lt; n; _i++) _v.push_back(nodes[1]); return _v; }();
+    auto qodes = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return nodes[0]; }(0))&gt;&gt; _v; _v.reserve(n - 1); for (int _i = 0; _i &lt; n - 1; _i++) _v.push_back(nodes[0]); return _v; }();
+    auto j = 1;
+    for (auto i = 0; i &lt; n; i++) {
+        for (auto k = 0; k &lt; (int)dfs[i].edges.size() - 1; k++) {
+            auto edge = dfs[i].edges[k];
+            if (edge.node == dfs[i].parent) {
+                edge = dfs[i].edges.back();
+                dfs[i].edges[k] = edge;
+            }
+            qodes[edge.ix] = edge.node;
+            edge.node-&gt;parent = &amp;dfs[i];
+            edge.node-&gt;parentLength = (int)edge.size();
+            dfs[j] = edge.node;
+            j++;
+        }
+        ([&amp;]() { auto&amp;&amp; _c = dfs[i].edges; _c.erase(_c.begin() + (int)dfs[i].edges.size() - 1); }());
+    }
+    for (auto&amp; node : ([&amp;]() { auto&amp;&amp; _c = dfs; return vector&lt;decay_t&lt;decltype(_c.front())&gt;&gt;(_c.rbegin(), _c.rend()); }())) {
+        node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;
+        auto bestIx = -(1);
+        for (auto k = 0; k &lt; (int)node-&gt;edges.size(); k++) {
+            node-&gt;edges[k].node-&gt;treeix = k;
+            if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {
+                node-&gt;bestChild = node-&gt;edges[k].node;
+                bestIx = k;
+            }
+        }
+        if (node-&gt;bestChild != nullptr) {
+            node-&gt;edges.back().node-&gt;treeix = bestIx;
+            node-&gt;edges[bestIx] = node-&gt;edges.back();
+            ([&amp;]() { auto&amp;&amp; _c = node-&gt;edges; _c.erase(_c.begin() + (int)node-&gt;edges.size() - 1); }());
+        }
+        node-&gt;hortree = new Hortree((int)node-&gt;edges.size());
+    }
+    for (auto&amp; node : dfs) {
+        if (node-&gt;parent-&gt;bestChild == node) {
+            continue;
+        }
+        auto amt = 0;
+        Node* subNode = node-&gt;bestChild;
+        while (subNode != nullptr) {
+            subNode-&gt;treeix = amt;
+            subNode = subNode-&gt;bestChild;
+            amt++;
+        }
+        node-&gt;vertree = new Vertree(node, amt);
+        subNode = node-&gt;bestChild;
+        while (subNode != nullptr) {
+            subNode-&gt;vertree = node-&gt;vertree;
+            subNode = subNode-&gt;bestChild;
+        }
+    }
+    for (auto&amp; node : ([&amp;]() { auto&amp;&amp; _c = dfs; return vector&lt;decay_t&lt;decltype(_c.front())&gt;&gt;(_c.rbegin(), _c.rend()); }())) {
+        if (node != nodes[1]) {
+            node-&gt;update();
+        }
+    }
+    long long last = 0;
+    for (auto i = 1; i &lt;= q; i++) {
+        const auto d = (nextLong() + last) % (n - 1);
+        auto e = (nextLong() + last) % w;
+        auto node = qodes[(int)(d)];
+        node-&gt;parentLength = e;
+        while (node != nodes[1]) {
+            node-&gt;update();
+            if (node == node-&gt;parent-&gt;bestChild) {
+                node = node-&gt;vertree-&gt;topNode;
+            } else {
+                node = node-&gt;parent;
+            }
+        }
+        last = max({nodes[1].hortree-&gt;posAnswer(), nodes[1].vertree-&gt;posAnswer(), nodes[1].hortree-&gt;longest() + nodes[1].vertree-&gt;longest()});
+        cout &lt;&lt; last &lt;&lt; '\n';
+    }
+    return 0;
+}
+
+	at app//org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)
+	at app//org.junit.jupiter.api.Assertions.fail(Assertions.java:138)
+	at app//transpiler.TranspilerTest.runTest(TranspilerTest.kt:67)
+	at app//transpiler.TranspilerTest.allTests$lambda$3$lambda$2(TranspilerTest.kt:41)
+	at java.base@11.0.11/java.util.Optional.ifPresent(Optional.java:183)
+	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
+	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
+</pre>
+</span>
+</div>
+</div>
+<div id="tab1" class="tab">
 <h2>Tests</h2>
 <table>
 <thead>
@@ -76,141 +522,195 @@
 </tr>
 </thead>
 <tr>
-<td class="success">example_jaimes_palace</td>
+<td class="success">example_deformed_balance</td>
 <td class="success">allTests()[10]</td>
-<td class="success">5.130s</td>
+<td class="success">5.059s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">example_desktop_rearrangement</td>
+<td class="success">allTests()[11]</td>
+<td class="success">5.211s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">example_dropshipping</td>
+<td class="success">allTests()[12]</td>
+<td class="success">5.157s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="failures">example_dynamic_diameter</td>
+<td class="failures">allTests()[13]</td>
+<td class="failures">1.583s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="success">example_interesting_problem</td>
+<td class="success">allTests()[14]</td>
+<td class="success">5.532s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">example_jaimes_palace</td>
+<td class="success">allTests()[15]</td>
+<td class="success">5.053s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">example_omkar_time_travel</td>
-<td class="success">allTests()[11]</td>
-<td class="success">5.966s</td>
+<td class="success">allTests()[16]</td>
+<td class="success">5.784s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">example_rainbow_branch</td>
-<td class="success">allTests()[12]</td>
-<td class="success">6.263s</td>
+<td class="success">allTests()[17]</td>
+<td class="success">6.312s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">example_sub_mst</td>
-<td class="success">allTests()[13]</td>
-<td class="success">5.860s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">if_when</td>
-<td class="success">allTests()[14]</td>
-<td class="success">4.518s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">labeled_breaks</td>
-<td class="success">allTests()[15]</td>
-<td class="success">4.753s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">lambdas</td>
-<td class="success">allTests()[16]</td>
-<td class="success">5.054s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">lists</td>
-<td class="success">allTests()[17]</td>
-<td class="success">5.494s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">loops</td>
 <td class="success">allTests()[18]</td>
-<td class="success">4.849s</td>
+<td class="success">5.714s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
-<td class="success">maps</td>
+<td class="success">global_vals_with_classes</td>
 <td class="success">allTests()[19]</td>
-<td class="success">5.109s</td>
+<td class="success">4.604s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">arithmetic</td>
 <td class="success">allTests()[1]</td>
-<td class="success">5.607s</td>
+<td class="success">5.717s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">if_when</td>
+<td class="success">allTests()[20]</td>
+<td class="success">4.460s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">labeled_breaks</td>
+<td class="success">allTests()[21]</td>
+<td class="success">4.537s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">lambdas</td>
+<td class="success">allTests()[22]</td>
+<td class="success">4.953s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">lateinit</td>
+<td class="success">allTests()[23]</td>
+<td class="success">4.191s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">lists</td>
+<td class="success">allTests()[24]</td>
+<td class="success">4.976s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">loops</td>
+<td class="success">allTests()[25]</td>
+<td class="success">4.776s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">maps</td>
+<td class="success">allTests()[26]</td>
+<td class="success">5.192s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">nested_functions</td>
-<td class="success">allTests()[20]</td>
-<td class="success">4.944s</td>
+<td class="success">allTests()[27]</td>
+<td class="success">4.567s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
-<td class="success">sorting</td>
-<td class="success">allTests()[21]</td>
-<td class="success">5.275s</td>
+<td class="success">nullable_class_members</td>
+<td class="success">allTests()[28]</td>
+<td class="success">4.373s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
-<td class="success">string_templates</td>
-<td class="success">allTests()[22]</td>
-<td class="success">4.339s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">treeset_treemap</td>
-<td class="success">allTests()[23]</td>
-<td class="success">4.708s</td>
+<td class="success">operator_overloading</td>
+<td class="success">allTests()[29]</td>
+<td class="success">4.346s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">basic_io</td>
 <td class="success">allTests()[2]</td>
-<td class="success">4.214s</td>
+<td class="success">4.576s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">sorting</td>
+<td class="success">allTests()[30]</td>
+<td class="success">5.422s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">string_templates</td>
+<td class="success">allTests()[31]</td>
+<td class="success">4.426s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">treeset_treemap</td>
+<td class="success">allTests()[32]</td>
+<td class="success">4.851s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">circular_class_refs</td>
+<td class="success">allTests()[3]</td>
+<td class="success">4.982s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">class_init_blocks</td>
+<td class="success">allTests()[4]</td>
+<td class="success">4.843s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">class_property_names</td>
+<td class="success">allTests()[5]</td>
+<td class="success">4.509s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">classes</td>
-<td class="success">allTests()[3]</td>
-<td class="success">4.437s</td>
+<td class="success">allTests()[6]</td>
+<td class="success">4.640s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">constructor_ref</td>
+<td class="success">allTests()[7]</td>
+<td class="success">4.532s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">data_classes</td>
-<td class="success">allTests()[4]</td>
-<td class="success">5.044s</td>
+<td class="success">allTests()[8]</td>
+<td class="success">5.266s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">destructuring</td>
-<td class="success">allTests()[5]</td>
-<td class="success">4.846s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">example_deformed_balance</td>
-<td class="success">allTests()[6]</td>
-<td class="success">5.635s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">example_desktop_rearrangement</td>
-<td class="success">allTests()[7]</td>
-<td class="success">5.637s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">example_dropshipping</td>
-<td class="success">allTests()[8]</td>
-<td class="success">5.211s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">example_interesting_problem</td>
 <td class="success">allTests()[9]</td>
-<td class="success">5.776s</td>
+<td class="success">5.040s</td>
 <td class="success">passed</td>
 </tr>
 </table>
@@ -223,7 +723,7 @@
 <input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
 </label>
 </div>Generated by 
-<a href="http://www.gradle.org">Gradle 8.8</a> at Apr 4, 2026, 6:18:32 PM</p>
+<a href="http://www.gradle.org">Gradle 8.8</a> at Apr 4, 2026, 8:46:53 PM</p>
 </div>
 </div>
 </body>

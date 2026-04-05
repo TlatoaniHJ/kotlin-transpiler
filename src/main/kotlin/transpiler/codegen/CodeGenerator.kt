@@ -128,7 +128,20 @@ class CodeGenerator(val config: Config = Config.default) {
 
     // ─── Main entry point ─────────────────────────────────────────────────────
 
-    fun generate(file: KotlinFile): String {
+    fun generate(file: KotlinFile, originalSource: String? = null): String {
+        val header = StringBuilder()
+
+        // Emit source comment header
+        if (originalSource != null) {
+            header.appendLine("// Transpiled from Kotlin to C++ using https://github.com/TlatoaniHJ/kotlin-transpiler")
+            header.appendLine("//")
+            for (line in originalSource.trimEnd().lines()) {
+                if (line.isEmpty()) header.appendLine("//")
+                else header.appendLine("// $line")
+            }
+            header.appendLine()
+        }
+
         val body = StringBuilder()
 
         // Detect features before emitting
@@ -138,7 +151,7 @@ class CodeGenerator(val config: Config = Config.default) {
         genFile(file)
         body.append(out)
 
-        return Boilerplate.build(
+        return header.toString() + Boilerplate.build(
             needsIo     = true,
             needsBitSet = needsBitSet,
             needsRandom = needsRandom

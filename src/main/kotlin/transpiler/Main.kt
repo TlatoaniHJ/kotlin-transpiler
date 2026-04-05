@@ -27,7 +27,7 @@ fun main(args: Array<String>) {
     }
 
     val cpp = try {
-        CodeGenerator(config).generate(ast)
+        CodeGenerator(config).generate(ast, source)
     } catch (e: Exception) {
         System.err.println("Code generation error: ${e.message}")
         if (System.getenv("TRANSPILER_DEBUG") != null) e.printStackTrace()

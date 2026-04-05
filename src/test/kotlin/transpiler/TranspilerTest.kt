@@ -49,7 +49,7 @@ class TranspilerTest {
         // ── Step 1: Transpile ─────────────────────────────────────────────────
         val source = ktFile.readText()
         val ast = KotlinTranspilerParser.parse(source)
-        val cpp = CodeGenerator(Config.default).generate(ast)
+        val cpp = CodeGenerator(Config.default).generate(ast, source)
 
         val tmpDir = Files.createTempDirectory("transpiler_test_${dir.name}").toFile()
         try {

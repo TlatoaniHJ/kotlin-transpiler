@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="transpiler.TranspilerTest" tests="40" skipped="0" failures="2" errors="0" timestamp="2026-04-05T03:02:25" hostname="Dannys-MBP-3" time="191.23">
+<testsuite name="transpiler.TranspilerTest" tests="40" skipped="0" failures="2" errors="0" timestamp="2026-04-05T03:22:24" hostname="Dannys-MBP-3" time="192.24">
   <properties/>
-  <testcase name="arithmetic" classname="transpiler.TranspilerTest" time="5.289"/>
-  <testcase name="basic_io" classname="transpiler.TranspilerTest" time="4.469"/>
-  <testcase name="circular_class_refs" classname="transpiler.TranspilerTest" time="5.059"/>
-  <testcase name="class_array_references" classname="transpiler.TranspilerTest" time="4.675">
+  <testcase name="arithmetic" classname="transpiler.TranspilerTest" time="5.528"/>
+  <testcase name="basic_io" classname="transpiler.TranspilerTest" time="4.343"/>
+  <testcase name="circular_class_refs" classname="transpiler.TranspilerTest" time="4.776"/>
+  <testcase name="class_array_references" classname="transpiler.TranspilerTest" time="4.533">
     <failure message="org.opentest4j.AssertionFailedError: Output mismatch for test 'class_array_references'.&#10;Kotlin stdout:&#10;10&#10;25&#10;37&#10;&#10;C++ stdout:&#10;10&#10;20&#10;30&#10; ==&gt; expected: &lt;10&#10;25&#10;37&gt; but was: &lt;10&#10;20&#10;30&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: Output mismatch for test 'class_array_references'.
 Kotlin stdout:
 10
@@ -32,119 +32,119 @@ C++ stdout:
 	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
 </failure>
   </testcase>
-  <testcase name="class_init_blocks" classname="transpiler.TranspilerTest" time="4.901"/>
-  <testcase name="class_property_names" classname="transpiler.TranspilerTest" time="4.574"/>
-  <testcase name="classes" classname="transpiler.TranspilerTest" time="4.605"/>
-  <testcase name="constructor_ref" classname="transpiler.TranspilerTest" time="4.622"/>
-  <testcase name="data_classes" classname="transpiler.TranspilerTest" time="5.21"/>
-  <testcase name="destructuring" classname="transpiler.TranspilerTest" time="5.059"/>
-  <testcase name="example_deformed_balance" classname="transpiler.TranspilerTest" time="5.235"/>
-  <testcase name="example_desktop_rearrangement" classname="transpiler.TranspilerTest" time="5.273"/>
-  <testcase name="example_dropshipping" classname="transpiler.TranspilerTest" time="5.156"/>
-  <testcase name="example_dynamic_diameter" classname="transpiler.TranspilerTest" time="1.5">
-    <failure message="org.opentest4j.AssertionFailedError: C++ compilation failed for example_dynamic_diameter:&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:133:63: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  133 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));&#10;      |                                                               ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:95:10: note: 'longest' declared here&#10;   95 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:133:98: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  133 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));&#10;      |                                                                                                  ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:95:10: note: 'longest' declared here&#10;   95 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:133:118: error: function 'posAnswer' with deduced return type cannot be used before it is defined&#10;  133 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));&#10;      |                                                                                                                      ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:96:10: note: 'posAnswer' declared here&#10;   96 |     auto posAnswer();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:61: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                             ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:114:10: note: 'longest' declared here&#10;  114 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:81: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                                                 ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:95:10: note: 'longest' declared here&#10;   95 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:125: error: function 'posAnswer' with deduced return type cannot be used before it is defined&#10;  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                                                                                             ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:115:10: note: 'posAnswer' declared here&#10;  115 |     auto posAnswer();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:147: error: function 'posAnswer' with deduced return type cannot be used before it is defined&#10;  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                                                                                                                   ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:96:10: note: 'posAnswer' declared here&#10;   96 |     auto posAnswer();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:169: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                                                                                                                                         ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:114:10: note: 'longest' declared here&#10;  114 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:190: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                                                                                                                                                              ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:95:10: note: 'longest' declared here&#10;   95 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:202:28: error: no viable overloaded '='&#10;  202 |             qodes[edge.ix] = edge.node;&#10;      |             ~~~~~~~~~~~~~~ ^ ~~~~~~~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:64:8: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'Node *' to 'const Node' for 1st argument; dereference the argument with *&#10;   64 | struct Node {&#10;      |        ^~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:64:8: note: candidate function (the implicit move assignment operator) not viable: no known conversion from 'Node *' to 'Node' for 1st argument; dereference the argument with *&#10;   64 | struct Node {&#10;      |        ^~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:205:20: error: no viable overloaded '='&#10;  205 |             dfs[j] = edge.node;&#10;      |             ~~~~~~ ^ ~~~~~~~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:64:8: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'Node *' to 'const Node' for 1st argument; dereference the argument with *&#10;   64 | struct Node {&#10;      |        ^~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:64:8: note: candidate function (the implicit move assignment operator) not viable: no known conversion from 'Node *' to 'Node' for 1st argument; dereference the argument with *&#10;   64 | struct Node {&#10;      |        ^~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:211:13: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  211 |         node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;&#10;      |         ~~~~^~&#10;      |             .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:211:42: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  211 |         node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;&#10;      |                                      ~~~~^~&#10;      |                                          .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:213:39: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  213 |         for (auto k = 0; k &lt; (int)node-&gt;edges.size(); k++) {&#10;      |                                   ~~~~^~&#10;      |                                       .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:214:17: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  214 |             node-&gt;edges[k].node-&gt;treeix = k;&#10;      |             ~~~~^~&#10;      |                 .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:215:21: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  215 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {&#10;      |                 ~~~~^~&#10;      |                     .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:215:51: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  215 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {&#10;      |                                               ~~~~^~&#10;      |                                                   .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:215:82: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  215 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {&#10;      |                                                                              ~~~~^~&#10;      |                                                                                  .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:216:21: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  216 |                 node-&gt;bestChild = node-&gt;edges[k].node;&#10;      |                 ~~~~^~&#10;      |                     .&#10;fatal error: too many errors emitted, stopping now [-ferror-limit=]&#10;20 errors generated.&#10;&#10;&#10;Generated C++:&#10;#include &lt;bits/stdc++.h&gt;&#10;using namespace std;&#10;&#10;int nextInt() { int x; cin &gt;&gt; x; return x; }&#10;long long nextLong() { long long x; cin &gt;&gt; x; return x; }&#10;double nextDouble() { double x; cin &gt;&gt; x; return x; }&#10;float nextFloat() { float x; cin &gt;&gt; x; return x; }&#10;string nextToken() { string x; cin &gt;&gt; x; return x; }&#10;string nextLine() { string x; getline(cin, x); return x; }&#10;&#10;mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());&#10;mt19937_64 rng64(chrono::steady_clock::now().time_since_epoch().count());&#10;int randInt(int lo, int hi) { return uniform_int_distribution&lt;int&gt;(lo, hi)(rng); }&#10;long long randLong(long long lo, long long hi) { return uniform_int_distribution&lt;long long&gt;(lo, hi)(rng64); }&#10;double randDouble() { return uniform_real_distribution&lt;double&gt;(0.0, 1.0)(rng); }&#10;struct Node;&#10;struct Edge;&#10;struct Horval;&#10;struct Verval;&#10;struct Hortree;&#10;struct Vertree;&#10;&#10;struct Edge {&#10;    Node* node;&#10;    long long length;&#10;    int ix;&#10;&#10;    Edge(Node* node_, long long length_, int ix_) : node(node_), length(length_), ix(ix_) {&#10;    }&#10;&#10;};&#10;&#10;struct Horval {&#10;    long long longest1;&#10;    long long longest2;&#10;    long long posAnswer;&#10;&#10;    Horval(long long longest1_, long long longest2_, long long posAnswer_) : longest1(longest1_), longest2(longest2_), posAnswer(posAnswer_) {&#10;    }&#10;&#10;    Horval operator+(Horval other);&#10;    bool operator==(const Horval&amp; o) const { return longest1 == o.longest1 &amp;&amp; longest2 == o.longest2 &amp;&amp; posAnswer == o.posAnswer; }&#10;    bool operator&lt;(const Horval&amp; o) const { return longest1 &lt; o.longest1 || (longest1 == o.longest1 &amp;&amp; (longest2 &lt; o.longest2 || (longest2 == o.longest2 &amp;&amp; (posAnswer &lt; o.posAnswer)))); }&#10;};&#10;&#10;const auto HORIZONTAL_IDENTITY = Horval(0, 0, 0);&#10;&#10;struct Verval {&#10;    long long length;&#10;    long long longest;&#10;    long long longestToUse;&#10;    long long posAnswer;&#10;&#10;    Verval(long long length_, long long longest_, long long longestToUse_, long long posAnswer_) : length(length_), longest(longest_), longestToUse(longestToUse_), posAnswer(posAnswer_) {&#10;    }&#10;&#10;    Verval operator*(Verval other);&#10;    bool operator==(const Verval&amp; o) const { return length == o.length &amp;&amp; longest == o.longest &amp;&amp; longestToUse == o.longestToUse &amp;&amp; posAnswer == o.posAnswer; }&#10;    bool operator&lt;(const Verval&amp; o) const { return length &lt; o.length || (length == o.length &amp;&amp; (longest &lt; o.longest || (longest == o.longest &amp;&amp; (longestToUse &lt; o.longestToUse || (longestToUse == o.longestToUse &amp;&amp; (posAnswer &lt; o.posAnswer)))))); }&#10;};&#10;&#10;const auto VERTICAL_IDENTITY = Verval(0, 0, 0, 0);&#10;&#10;struct Node {&#10;    int ix;&#10;    Node* parent = nullptr;&#10;    long long parentLength = -(1);&#10;    int subTreeSize = 1;&#10;    vector&lt;Edge&gt; edges = vector&lt;Edge&gt;();&#10;    Node* bestChild = nullptr;&#10;    Hortree* hortree = nullptr;&#10;    Vertree* vertree = nullptr;&#10;    decltype(-(1)) treeix = -(1);&#10;&#10;    Node(int ix_) : ix(ix_) {&#10;    }&#10;&#10;    void update();&#10;};&#10;&#10;struct Hortree {&#10;    int length;&#10;    std::vector&lt;Horval&gt; _array;&#10;&#10;    Hortree(int amt) {&#10;        auto l = 1;&#10;        while (l &lt; amt) {&#10;            l *= 2;&#10;        }&#10;        length = l;&#10;        _array = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return HORIZONTAL_IDENTITY; }(0))&gt;&gt; _v; _v.reserve(length * 2); for (int _i = 0; _i &lt; length * 2; _i++) _v.push_back(HORIZONTAL_IDENTITY); return _v; }();&#10;    }&#10;&#10;    void update(int index, Horval newVal);&#10;    auto longest();&#10;    auto posAnswer();&#10;};&#10;&#10;struct Vertree {&#10;    Node* topNode;&#10;    int length;&#10;    std::vector&lt;Verval&gt; _array;&#10;&#10;    Vertree(Node* topNode_, int amt) : topNode(topNode_) {&#10;        auto l = 1;&#10;        while (l &lt; amt) {&#10;            l *= 2;&#10;        }&#10;        length = l;&#10;        _array = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return VERTICAL_IDENTITY; }(0))&gt;&gt; _v; _v.reserve(length * 2); for (int _i = 0; _i &lt; length * 2; _i++) _v.push_back(VERTICAL_IDENTITY); return _v; }();&#10;    }&#10;&#10;    void update(int index, Verval newVal);&#10;    auto longest();&#10;    auto posAnswer();&#10;};&#10;&#10;&#10;Horval Horval::operator+(Horval other) {&#10;    if (longest1 &gt; other.longest1) {&#10;        return Horval(longest1, max(longest2, other.longest1), max(posAnswer, other.posAnswer));&#10;    } else {&#10;        return Horval(other.longest1, max(longest1, other.longest2), max(posAnswer, other.posAnswer));&#10;    }&#10;}&#10;&#10;Verval Verval::operator*(Verval other) {&#10;    return Verval(length + other.length, max(longest, other.longest + length), max(longestToUse + other.length, other.longestToUse), max({posAnswer, other.posAnswer, longestToUse + other.longest}));&#10;}&#10;&#10;void Node::update() {&#10;    if (parent-&gt;bestChild == this) {&#10;        vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));&#10;    } else {&#10;        parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;    }&#10;}&#10;&#10;void Hortree::update(int index, Horval newVal) {&#10;    auto node = index + length;&#10;    _array[node] = newVal;&#10;    node = (node &gt;&gt; 1);&#10;    while (node &gt; 0) {&#10;        _array[node] = _array[2 * node] + _array[2 * node + 1];&#10;        node = (node &gt;&gt; 1);&#10;    }&#10;}&#10;&#10;auto Hortree::longest() {&#10;    return _array[1].longest1;&#10;}&#10;&#10;auto Hortree::posAnswer() {&#10;    return max(_array[1].longest1 + _array[1].longest2, _array[1].posAnswer);&#10;}&#10;&#10;void Vertree::update(int index, Verval newVal) {&#10;    auto node = index + length;&#10;    _array[node] = newVal;&#10;    node = (node &gt;&gt; 1);&#10;    while (node &gt; 0) {&#10;        _array[node] = _array[2 * node] * _array[2 * node + 1];&#10;        node = (node &gt;&gt; 1);&#10;    }&#10;}&#10;&#10;auto Vertree::longest() {&#10;    return _array[1].longest;&#10;}&#10;&#10;auto Vertree::posAnswer() {&#10;    return max(_array[1].longestToUse, _array[1].posAnswer);&#10;}&#10;&#10;int main() {&#10;    ios::sync_with_stdio(false);&#10;    cin.tie(nullptr);&#10;    cout &lt;&lt; boolalpha;&#10;    const auto n = nextInt();&#10;    const auto q = nextInt();&#10;    const auto w = nextLong();&#10;    auto nodes = [&amp;]() { vector&lt;Node&gt; _v; _v.reserve(n + 1); for (int _it = 0; _it &lt; n + 1; _it++) _v.push_back(Node(_it)); return _v; }();&#10;    nodes[1].parent = &amp;nodes[0];&#10;    nodes[1].edges.push_back(Edge(&amp;nodes[0], 0, 0));&#10;    for (auto i = 0; i &lt; n - 1; i++) {&#10;        const auto a = nextInt();&#10;        const auto b = nextInt();&#10;        const auto length = nextLong();&#10;        nodes[a].edges.push_back(Edge(&amp;nodes[b], length, i));&#10;        nodes[b].edges.push_back(Edge(&amp;nodes[a], length, i));&#10;    }&#10;    auto dfs = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return nodes[1]; }(0))&gt;&gt; _v; _v.reserve(n); for (int _i = 0; _i &lt; n; _i++) _v.push_back(nodes[1]); return _v; }();&#10;    auto qodes = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return nodes[0]; }(0))&gt;&gt; _v; _v.reserve(n - 1); for (int _i = 0; _i &lt; n - 1; _i++) _v.push_back(nodes[0]); return _v; }();&#10;    auto j = 1;&#10;    for (auto i = 0; i &lt; n; i++) {&#10;        for (auto k = 0; k &lt; (int)dfs[i].edges.size() - 1; k++) {&#10;            auto edge = dfs[i].edges[k];&#10;            if (edge.node == dfs[i].parent) {&#10;                edge = dfs[i].edges.back();&#10;                dfs[i].edges[k] = edge;&#10;            }&#10;            qodes[edge.ix] = edge.node;&#10;            edge.node-&gt;parent = &amp;dfs[i];&#10;            edge.node-&gt;parentLength = edge.length;&#10;            dfs[j] = edge.node;&#10;            j++;&#10;        }&#10;        ([&amp;]() { auto&amp;&amp; _c = dfs[i].edges; _c.erase(_c.begin() + (int)dfs[i].edges.size() - 1); }());&#10;    }&#10;    for (auto&amp; node : ([&amp;]() { auto&amp;&amp; _c = dfs; return vector&lt;decay_t&lt;decltype(_c.front())&gt;&gt;(_c.rbegin(), _c.rend()); }())) {&#10;        node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;&#10;        auto bestIx = -(1);&#10;        for (auto k = 0; k &lt; (int)node-&gt;edges.size(); k++) {&#10;            node-&gt;edges[k].node-&gt;treeix = k;&#10;            if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {&#10;                node-&gt;bestChild = node-&gt;edges[k].node;&#10;                bestIx = k;&#10;            }&#10;        }&#10;        if (node-&gt;bestChild != nullptr) {&#10;            node-&gt;edges.back().node-&gt;treeix = bestIx;&#10;            node-&gt;edges[bestIx] = node-&gt;edges.back();&#10;            ([&amp;]() { auto&amp;&amp; _c = node-&gt;edges; _c.erase(_c.begin() + (int)node-&gt;edges.size() - 1); }());&#10;        }&#10;        node-&gt;hortree = new Hortree((int)node-&gt;edges.size());&#10;    }&#10;    for (auto&amp; node : dfs) {&#10;        if (node-&gt;parent-&gt;bestChild == node) {&#10;            continue;&#10;        }&#10;        auto amt = 0;&#10;        Node* subNode = node-&gt;bestChild;&#10;        while (subNode != nullptr) {&#10;            subNode-&gt;treeix = amt;&#10;            subNode = subNode-&gt;bestChild;&#10;            amt++;&#10;        }&#10;        node-&gt;vertree = new Vertree(node, amt);&#10;        subNode = node-&gt;bestChild;&#10;        while (subNode != nullptr) {&#10;            subNode-&gt;vertree = node-&gt;vertree;&#10;            subNode = subNode-&gt;bestChild;&#10;        }&#10;    }&#10;    for (auto&amp; node : ([&amp;]() { auto&amp;&amp; _c = dfs; return vector&lt;decay_t&lt;decltype(_c.front())&gt;&gt;(_c.rbegin(), _c.rend()); }())) {&#10;        if (node != nodes[1]) {&#10;            node-&gt;update();&#10;        }&#10;    }&#10;    long long last = 0;&#10;    for (auto i = 1; i &lt;= q; i++) {&#10;        const auto d = (nextLong() + last) % (n - 1);&#10;        auto e = (nextLong() + last) % w;&#10;        auto node = qodes[(int)(d)];&#10;        node-&gt;parentLength = e;&#10;        while (node != nodes[1]) {&#10;            node.update();&#10;            if (node == node-&gt;parent-&gt;bestChild) {&#10;                node = node-&gt;vertree-&gt;topNode;&#10;            } else {&#10;                node = node-&gt;parent;&#10;            }&#10;        }&#10;        last = max({nodes[1].hortree-&gt;posAnswer(), nodes[1].vertree-&gt;posAnswer(), nodes[1].hortree-&gt;longest() + nodes[1].vertree-&gt;longest()});&#10;        cout &lt;&lt; last &lt;&lt; '\n';&#10;    }&#10;    return 0;&#10;}&#10;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: C++ compilation failed for example_dynamic_diameter:
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:133:63: error: function 'longest' with deduced return type cannot be used before it is defined
-  133 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));
+  <testcase name="class_init_blocks" classname="transpiler.TranspilerTest" time="4.727"/>
+  <testcase name="class_property_names" classname="transpiler.TranspilerTest" time="4.375"/>
+  <testcase name="classes" classname="transpiler.TranspilerTest" time="4.366"/>
+  <testcase name="constructor_ref" classname="transpiler.TranspilerTest" time="4.468"/>
+  <testcase name="data_classes" classname="transpiler.TranspilerTest" time="5.113"/>
+  <testcase name="destructuring" classname="transpiler.TranspilerTest" time="4.931"/>
+  <testcase name="example_deformed_balance" classname="transpiler.TranspilerTest" time="5.237"/>
+  <testcase name="example_desktop_rearrangement" classname="transpiler.TranspilerTest" time="5.172"/>
+  <testcase name="example_dropshipping" classname="transpiler.TranspilerTest" time="5.081"/>
+  <testcase name="example_dynamic_diameter" classname="transpiler.TranspilerTest" time="1.536">
+    <failure message="org.opentest4j.AssertionFailedError: C++ compilation failed for example_dynamic_diameter:&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:386:63: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  386 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));&#10;      |                                                               ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:348:10: note: 'longest' declared here&#10;  348 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:386:98: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  386 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));&#10;      |                                                                                                  ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:348:10: note: 'longest' declared here&#10;  348 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:386:118: error: function 'posAnswer' with deduced return type cannot be used before it is defined&#10;  386 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));&#10;      |                                                                                                                      ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:349:10: note: 'posAnswer' declared here&#10;  349 |     auto posAnswer();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:61: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                             ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:367:10: note: 'longest' declared here&#10;  367 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:81: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                                                 ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:348:10: note: 'longest' declared here&#10;  348 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:125: error: function 'posAnswer' with deduced return type cannot be used before it is defined&#10;  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                                                                                             ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:368:10: note: 'posAnswer' declared here&#10;  368 |     auto posAnswer();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:147: error: function 'posAnswer' with deduced return type cannot be used before it is defined&#10;  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                                                                                                                   ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:349:10: note: 'posAnswer' declared here&#10;  349 |     auto posAnswer();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:169: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                                                                                                                                         ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:367:10: note: 'longest' declared here&#10;  367 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:190: error: function 'longest' with deduced return type cannot be used before it is defined&#10;  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;      |                                                                                                                                                                                              ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:348:10: note: 'longest' declared here&#10;  348 |     auto longest();&#10;      |          ^&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:455:28: error: no viable overloaded '='&#10;  455 |             qodes[edge.ix] = edge.node;&#10;      |             ~~~~~~~~~~~~~~ ^ ~~~~~~~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:317:8: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'Node *' to 'const Node' for 1st argument; dereference the argument with *&#10;  317 | struct Node {&#10;      |        ^~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:317:8: note: candidate function (the implicit move assignment operator) not viable: no known conversion from 'Node *' to 'Node' for 1st argument; dereference the argument with *&#10;  317 | struct Node {&#10;      |        ^~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:458:20: error: no viable overloaded '='&#10;  458 |             dfs[j] = edge.node;&#10;      |             ~~~~~~ ^ ~~~~~~~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:317:8: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'Node *' to 'const Node' for 1st argument; dereference the argument with *&#10;  317 | struct Node {&#10;      |        ^~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:317:8: note: candidate function (the implicit move assignment operator) not viable: no known conversion from 'Node *' to 'Node' for 1st argument; dereference the argument with *&#10;  317 | struct Node {&#10;      |        ^~~~&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:464:13: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  464 |         node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;&#10;      |         ~~~~^~&#10;      |             .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:464:42: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  464 |         node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;&#10;      |                                      ~~~~^~&#10;      |                                          .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:466:39: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  466 |         for (auto k = 0; k &lt; (int)node-&gt;edges.size(); k++) {&#10;      |                                   ~~~~^~&#10;      |                                       .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:467:17: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  467 |             node-&gt;edges[k].node-&gt;treeix = k;&#10;      |             ~~~~^~&#10;      |                 .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:468:21: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  468 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {&#10;      |                 ~~~~^~&#10;      |                     .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:468:51: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  468 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {&#10;      |                                               ~~~~^~&#10;      |                                                   .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:468:82: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  468 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {&#10;      |                                                                              ~~~~^~&#10;      |                                                                                  .&#10;/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:469:21: error: member reference type 'Node' is not a pointer; did you mean to use '.'?&#10;  469 |                 node-&gt;bestChild = node-&gt;edges[k].node;&#10;      |                 ~~~~^~&#10;      |                     .&#10;fatal error: too many errors emitted, stopping now [-ferror-limit=]&#10;20 errors generated.&#10;&#10;&#10;Generated C++:&#10;// Transpiled from Kotlin to C++ using https://github.com/TlatoaniHJ/kotlin-transpiler&#10;//&#10;// import java.util.*&#10;// import kotlin.math.max&#10;//&#10;// fun main() {&#10;//     val n = nextInt()&#10;//     val q = nextInt()&#10;//     val w = nextLong()&#10;//     val nodes = Array(n + 1, ::Node)&#10;//     nodes[1].parent = nodes[0]&#10;//     nodes[1].edges.add(Edge(nodes[0], 0, 0))&#10;//     for (i in 0 until n - 1) {&#10;//         val a = nextInt()&#10;//         val b = nextInt()&#10;//         val length = nextLong()&#10;//         nodes[a].edges.add(Edge(nodes[b], length, i))&#10;//         nodes[b].edges.add(Edge(nodes[a], length, i))&#10;//     }&#10;//     val dfs = Array(n) { nodes[1] }&#10;//     val qodes = Array(n - 1) { nodes[0] }&#10;//     var j = 1&#10;//     for (i in 0 until n) {&#10;//         for (k in 0 until dfs[i].edges.size - 1) {&#10;//             var edge = dfs[i].edges[k]&#10;//             if (edge.node == dfs[i].parent) {&#10;//                 edge = dfs[i].edges.last()&#10;//                 dfs[i].edges[k] = edge&#10;//             }&#10;//             qodes[edge.ix] = edge.node&#10;//             edge.node.parent = dfs[i]&#10;//             edge.node.parentLength = edge.length&#10;//             dfs[j] = edge.node&#10;//             j++&#10;//         }&#10;//         dfs[i].edges.removeAt(dfs[i].edges.size - 1)&#10;//     }&#10;//     for (node in dfs.reversed()) {&#10;//         node.parent.subTreeSize += node.subTreeSize&#10;//         var bestIx = -1&#10;//         for (k in 0 until node.edges.size) {&#10;//             node.edges[k].node.treeix = k&#10;//             if (node.bestChild == null || node.bestChild!!.subTreeSize &lt; node.edges[k].node.subTreeSize) {&#10;//                 node.bestChild = node.edges[k].node&#10;//                 bestIx = k&#10;//             }&#10;//         }&#10;//         //println(&quot;$node.bestChild = ${node.bestChild}&quot;)&#10;//         if (node.bestChild != null) {&#10;//             node.edges.last().node.treeix = bestIx&#10;//             node.edges[bestIx] = node.edges.last()&#10;//             node.edges.removeAt(node.edges.size - 1)&#10;//         }&#10;//         node.hortree = Hortree(node.edges.size)&#10;//     }&#10;//     for (node in dfs) {&#10;//         if (node.parent.bestChild == node) {&#10;//             continue&#10;//         }&#10;//         var amt = 0&#10;//         var subNode: Node? = node.bestChild&#10;//         while (subNode != null) {&#10;//             subNode.treeix = amt&#10;//             subNode = subNode.bestChild&#10;//             amt++&#10;//         }&#10;//         node.vertree = Vertree(node, amt)&#10;//         subNode = node.bestChild&#10;//         while (subNode != null) {&#10;//             subNode.vertree = node.vertree&#10;//             subNode = subNode.bestChild&#10;//         }&#10;//     }&#10;//     for (node in dfs.reversed()) {&#10;//         if (node != nodes[1]) {&#10;//             node.update()&#10;//         }&#10;//     }&#10;//     var last: Long = 0&#10;//     for (i in 1..q) {&#10;//         val d = (nextLong() + last) % (n - 1)&#10;//         var e = (nextLong() + last) % w&#10;//         var node = qodes[d.toInt()]&#10;//         //println(&quot;node = $node, e = $e&quot;)&#10;//         node.parentLength = e&#10;//         while (node != nodes[1]) {&#10;//             node.update()&#10;//             if (node == node.parent.bestChild) {&#10;//                 node = node.vertree.topNode&#10;//             } else {&#10;//                 node = node.parent&#10;//             }&#10;//         }&#10;//         last = maxOf(nodes[1].hortree.posAnswer(), nodes[1].vertree.posAnswer(), nodes[1].hortree.longest() + nodes[1].vertree.longest())&#10;//         println(last)&#10;//     }&#10;// }&#10;//&#10;// class Node(val ix: Int) {&#10;//     lateinit var parent: Node&#10;//     var parentLength: Long = -1&#10;//     var subTreeSize = 1&#10;//     val edges = mutableListOf&lt;Edge&gt;()&#10;//     var bestChild: Node? = null&#10;//     lateinit var hortree: Hortree&#10;//     lateinit var vertree: Vertree&#10;//     var treeix = -1&#10;//&#10;//     fun update() {&#10;//         //println(&quot;$this.update()&quot;)&#10;//         if (parent.bestChild == this) {&#10;//             vertree.update(&#10;//                 treeix,&#10;//                 Verval(&#10;//                     parentLength,&#10;//                     hortree.longest() + parentLength,&#10;//                     hortree.longest(),&#10;//                     hortree.posAnswer()&#10;//                 )&#10;//             )&#10;//         } else {&#10;//             parent.hortree.update(&#10;//                 treeix,&#10;//                 Horval(&#10;//                     max(vertree.longest(),&#10;//                         hortree.longest()) + parentLength,&#10;//                     0,&#10;//                     maxOf(vertree.posAnswer(), hortree.posAnswer(), vertree.longest() + hortree.longest())&#10;//                 )&#10;//             )&#10;//         }&#10;//     }&#10;// }&#10;//&#10;// class Edge(val node: Node, val length: Long, val ix: Int)&#10;//&#10;// val HORIZONTAL_IDENTITY = Horval(0, 0, 0)&#10;// val VERTICAL_IDENTITY = Verval(0, 0, 0, 0)&#10;//&#10;// data class Horval(val longest1: Long, val longest2: Long, val posAnswer: Long) {&#10;//     operator fun plus(other: Horval): Horval {&#10;//         if (longest1 &gt; other.longest1) {&#10;//             return Horval(longest1, max(longest2, other.longest1), max(posAnswer, other.posAnswer))&#10;//         } else {&#10;//             return Horval(other.longest1, max(longest1, other.longest2), max(posAnswer, other.posAnswer))&#10;//         }&#10;//     }&#10;// }&#10;//&#10;// data class Verval(val length: Long, val longest: Long, val longestToUse: Long, val posAnswer: Long) {&#10;//     // this is above, other is below&#10;//     operator fun times(other: Verval) = Verval(&#10;//         length + other.length,&#10;//         max(longest, other.longest + length),&#10;//         max(longestToUse + other.length, other.longestToUse),&#10;//         maxOf(posAnswer, other.posAnswer, longestToUse + other.longest)&#10;//     )&#10;// }&#10;//&#10;// class Hortree(amt: Int) {&#10;//     val length: Int&#10;//     val array: Array&lt;Horval&gt;&#10;//&#10;//     init {&#10;//         var l = 1&#10;//         while (l &lt; amt) {&#10;//             l *= 2&#10;//         }&#10;//         length = l&#10;//         array = Array(length * 2) { HORIZONTAL_IDENTITY }&#10;//     }&#10;//&#10;//     fun update(index: Int, newVal: Horval) {&#10;//         var node = index + length&#10;//         array[node] = newVal&#10;//         node = node shr 1&#10;//         while (node &gt; 0) {&#10;//             array[node] = array[2 * node] + array[(2 * node) + 1]&#10;//             node = node shr 1&#10;//         }&#10;//     }&#10;//&#10;//     fun longest() = array[1].longest1&#10;//     fun posAnswer() = max(array[1].longest1 + array[1].longest2, array[1].posAnswer)&#10;// }&#10;//&#10;// class Vertree(val topNode: Node, amt: Int) {&#10;//     val length: Int&#10;//     val array: Array&lt;Verval&gt;&#10;//&#10;//     init {&#10;//         var l = 1&#10;//         while (l &lt; amt) {&#10;//             l *= 2&#10;//         }&#10;//         length = l&#10;//         array = Array(length * 2) { VERTICAL_IDENTITY }&#10;//     }&#10;//&#10;//     fun update(index: Int, newVal: Verval) {&#10;//         //println(&quot;update($index, $newVal)&quot;)&#10;//         var node = index + length&#10;//         array[node] = newVal&#10;//         //println(&quot;array[$node] = ${array[node]}&quot;)&#10;//         node = node shr 1&#10;//         while (node &gt; 0) {&#10;//             array[node] = array[2 * node] * array[(2 * node) + 1]&#10;//             //println(&quot;array[$node] = ${array[node]}&quot;)&#10;//             node = node shr 1&#10;//         }&#10;//     }&#10;//&#10;//     fun longest() = array[1].longest&#10;//     fun posAnswer() = max(array[1].longestToUse, array[1].posAnswer)&#10;// }&#10;//&#10;// /*&#10;//&#10;// Sample 1:&#10;// 4 3 2000&#10;// 1 2 100&#10;// 2 3 1000&#10;// 2 4 1000&#10;// 2 1030&#10;// 1 1020&#10;// 1 890&#10;//&#10;//&#10;// Sample 2:&#10;// 10 10 10000&#10;// 1 9 1241&#10;// 5 6 1630&#10;// 10 5 1630&#10;// 2 6 853&#10;// 10 1 511&#10;// 5 3 760&#10;// 8 3 1076&#10;// 4 10 1483&#10;// 7 10 40&#10;// 8 2051&#10;// 5 6294&#10;// 5 4168&#10;// 7 1861&#10;// 0 5244&#10;// 6 5156&#10;// 3 3001&#10;// 8 5267&#10;// 5 3102&#10;// 8 3623&#10;//&#10;//&#10;//  */&#10;&#10;#include &lt;bits/stdc++.h&gt;&#10;using namespace std;&#10;&#10;int nextInt() { int x; cin &gt;&gt; x; return x; }&#10;long long nextLong() { long long x; cin &gt;&gt; x; return x; }&#10;double nextDouble() { double x; cin &gt;&gt; x; return x; }&#10;float nextFloat() { float x; cin &gt;&gt; x; return x; }&#10;string nextToken() { string x; cin &gt;&gt; x; return x; }&#10;string nextLine() { string x; getline(cin, x); return x; }&#10;&#10;mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());&#10;mt19937_64 rng64(chrono::steady_clock::now().time_since_epoch().count());&#10;int randInt(int lo, int hi) { return uniform_int_distribution&lt;int&gt;(lo, hi)(rng); }&#10;long long randLong(long long lo, long long hi) { return uniform_int_distribution&lt;long long&gt;(lo, hi)(rng64); }&#10;double randDouble() { return uniform_real_distribution&lt;double&gt;(0.0, 1.0)(rng); }&#10;struct Node;&#10;struct Edge;&#10;struct Horval;&#10;struct Verval;&#10;struct Hortree;&#10;struct Vertree;&#10;&#10;struct Edge {&#10;    Node* node;&#10;    long long length;&#10;    int ix;&#10;&#10;    Edge(Node* node_, long long length_, int ix_) : node(node_), length(length_), ix(ix_) {&#10;    }&#10;&#10;};&#10;&#10;struct Horval {&#10;    long long longest1;&#10;    long long longest2;&#10;    long long posAnswer;&#10;&#10;    Horval(long long longest1_, long long longest2_, long long posAnswer_) : longest1(longest1_), longest2(longest2_), posAnswer(posAnswer_) {&#10;    }&#10;&#10;    Horval operator+(Horval other);&#10;    bool operator==(const Horval&amp; o) const { return longest1 == o.longest1 &amp;&amp; longest2 == o.longest2 &amp;&amp; posAnswer == o.posAnswer; }&#10;    bool operator&lt;(const Horval&amp; o) const { return longest1 &lt; o.longest1 || (longest1 == o.longest1 &amp;&amp; (longest2 &lt; o.longest2 || (longest2 == o.longest2 &amp;&amp; (posAnswer &lt; o.posAnswer)))); }&#10;};&#10;&#10;const auto HORIZONTAL_IDENTITY = Horval(0, 0, 0);&#10;&#10;struct Verval {&#10;    long long length;&#10;    long long longest;&#10;    long long longestToUse;&#10;    long long posAnswer;&#10;&#10;    Verval(long long length_, long long longest_, long long longestToUse_, long long posAnswer_) : length(length_), longest(longest_), longestToUse(longestToUse_), posAnswer(posAnswer_) {&#10;    }&#10;&#10;    Verval operator*(Verval other);&#10;    bool operator==(const Verval&amp; o) const { return length == o.length &amp;&amp; longest == o.longest &amp;&amp; longestToUse == o.longestToUse &amp;&amp; posAnswer == o.posAnswer; }&#10;    bool operator&lt;(const Verval&amp; o) const { return length &lt; o.length || (length == o.length &amp;&amp; (longest &lt; o.longest || (longest == o.longest &amp;&amp; (longestToUse &lt; o.longestToUse || (longestToUse == o.longestToUse &amp;&amp; (posAnswer &lt; o.posAnswer)))))); }&#10;};&#10;&#10;const auto VERTICAL_IDENTITY = Verval(0, 0, 0, 0);&#10;&#10;struct Node {&#10;    int ix;&#10;    Node* parent = nullptr;&#10;    long long parentLength = -(1);&#10;    int subTreeSize = 1;&#10;    vector&lt;Edge&gt; edges = vector&lt;Edge&gt;();&#10;    Node* bestChild = nullptr;&#10;    Hortree* hortree = nullptr;&#10;    Vertree* vertree = nullptr;&#10;    decltype(-(1)) treeix = -(1);&#10;&#10;    Node(int ix_) : ix(ix_) {&#10;    }&#10;&#10;    void update();&#10;};&#10;&#10;struct Hortree {&#10;    int length;&#10;    std::vector&lt;Horval&gt; _array;&#10;&#10;    Hortree(int amt) {&#10;        auto l = 1;&#10;        while (l &lt; amt) {&#10;            l *= 2;&#10;        }&#10;        length = l;&#10;        _array = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return HORIZONTAL_IDENTITY; }(0))&gt;&gt; _v; _v.reserve(length * 2); for (int _i = 0; _i &lt; length * 2; _i++) _v.push_back(HORIZONTAL_IDENTITY); return _v; }();&#10;    }&#10;&#10;    void update(int index, Horval newVal);&#10;    auto longest();&#10;    auto posAnswer();&#10;};&#10;&#10;struct Vertree {&#10;    Node* topNode;&#10;    int length;&#10;    std::vector&lt;Verval&gt; _array;&#10;&#10;    Vertree(Node* topNode_, int amt) : topNode(topNode_) {&#10;        auto l = 1;&#10;        while (l &lt; amt) {&#10;            l *= 2;&#10;        }&#10;        length = l;&#10;        _array = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return VERTICAL_IDENTITY; }(0))&gt;&gt; _v; _v.reserve(length * 2); for (int _i = 0; _i &lt; length * 2; _i++) _v.push_back(VERTICAL_IDENTITY); return _v; }();&#10;    }&#10;&#10;    void update(int index, Verval newVal);&#10;    auto longest();&#10;    auto posAnswer();&#10;};&#10;&#10;&#10;Horval Horval::operator+(Horval other) {&#10;    if (longest1 &gt; other.longest1) {&#10;        return Horval(longest1, max(longest2, other.longest1), max(posAnswer, other.posAnswer));&#10;    } else {&#10;        return Horval(other.longest1, max(longest1, other.longest2), max(posAnswer, other.posAnswer));&#10;    }&#10;}&#10;&#10;Verval Verval::operator*(Verval other) {&#10;    return Verval(length + other.length, max(longest, other.longest + length), max(longestToUse + other.length, other.longestToUse), max({posAnswer, other.posAnswer, longestToUse + other.longest}));&#10;}&#10;&#10;void Node::update() {&#10;    if (parent-&gt;bestChild == this) {&#10;        vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));&#10;    } else {&#10;        parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));&#10;    }&#10;}&#10;&#10;void Hortree::update(int index, Horval newVal) {&#10;    auto node = index + length;&#10;    _array[node] = newVal;&#10;    node = (node &gt;&gt; 1);&#10;    while (node &gt; 0) {&#10;        _array[node] = _array[2 * node] + _array[2 * node + 1];&#10;        node = (node &gt;&gt; 1);&#10;    }&#10;}&#10;&#10;auto Hortree::longest() {&#10;    return _array[1].longest1;&#10;}&#10;&#10;auto Hortree::posAnswer() {&#10;    return max(_array[1].longest1 + _array[1].longest2, _array[1].posAnswer);&#10;}&#10;&#10;void Vertree::update(int index, Verval newVal) {&#10;    auto node = index + length;&#10;    _array[node] = newVal;&#10;    node = (node &gt;&gt; 1);&#10;    while (node &gt; 0) {&#10;        _array[node] = _array[2 * node] * _array[2 * node + 1];&#10;        node = (node &gt;&gt; 1);&#10;    }&#10;}&#10;&#10;auto Vertree::longest() {&#10;    return _array[1].longest;&#10;}&#10;&#10;auto Vertree::posAnswer() {&#10;    return max(_array[1].longestToUse, _array[1].posAnswer);&#10;}&#10;&#10;int main() {&#10;    ios::sync_with_stdio(false);&#10;    cin.tie(nullptr);&#10;    cout &lt;&lt; boolalpha;&#10;    const auto n = nextInt();&#10;    const auto q = nextInt();&#10;    const auto w = nextLong();&#10;    auto nodes = [&amp;]() { vector&lt;Node&gt; _v; _v.reserve(n + 1); for (int _it = 0; _it &lt; n + 1; _it++) _v.push_back(Node(_it)); return _v; }();&#10;    nodes[1].parent = &amp;nodes[0];&#10;    nodes[1].edges.push_back(Edge(&amp;nodes[0], 0, 0));&#10;    for (auto i = 0; i &lt; n - 1; i++) {&#10;        const auto a = nextInt();&#10;        const auto b = nextInt();&#10;        const auto length = nextLong();&#10;        nodes[a].edges.push_back(Edge(&amp;nodes[b], length, i));&#10;        nodes[b].edges.push_back(Edge(&amp;nodes[a], length, i));&#10;    }&#10;    auto dfs = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return nodes[1]; }(0))&gt;&gt; _v; _v.reserve(n); for (int _i = 0; _i &lt; n; _i++) _v.push_back(nodes[1]); return _v; }();&#10;    auto qodes = [&amp;]() { vector&lt;decay_t&lt;decltype([&amp;](int _i) { return nodes[0]; }(0))&gt;&gt; _v; _v.reserve(n - 1); for (int _i = 0; _i &lt; n - 1; _i++) _v.push_back(nodes[0]); return _v; }();&#10;    auto j = 1;&#10;    for (auto i = 0; i &lt; n; i++) {&#10;        for (auto k = 0; k &lt; (int)dfs[i].edges.size() - 1; k++) {&#10;            auto edge = dfs[i].edges[k];&#10;            if (edge.node == dfs[i].parent) {&#10;                edge = dfs[i].edges.back();&#10;                dfs[i].edges[k] = edge;&#10;            }&#10;            qodes[edge.ix] = edge.node;&#10;            edge.node-&gt;parent = &amp;dfs[i];&#10;            edge.node-&gt;parentLength = edge.length;&#10;            dfs[j] = edge.node;&#10;            j++;&#10;        }&#10;        ([&amp;]() { auto&amp;&amp; _c = dfs[i].edges; _c.erase(_c.begin() + (int)dfs[i].edges.size() - 1); }());&#10;    }&#10;    for (auto&amp; node : ([&amp;]() { auto&amp;&amp; _c = dfs; return vector&lt;decay_t&lt;decltype(_c.front())&gt;&gt;(_c.rbegin(), _c.rend()); }())) {&#10;        node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;&#10;        auto bestIx = -(1);&#10;        for (auto k = 0; k &lt; (int)node-&gt;edges.size(); k++) {&#10;            node-&gt;edges[k].node-&gt;treeix = k;&#10;            if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {&#10;                node-&gt;bestChild = node-&gt;edges[k].node;&#10;                bestIx = k;&#10;            }&#10;        }&#10;        if (node-&gt;bestChild != nullptr) {&#10;            node-&gt;edges.back().node-&gt;treeix = bestIx;&#10;            node-&gt;edges[bestIx] = node-&gt;edges.back();&#10;            ([&amp;]() { auto&amp;&amp; _c = node-&gt;edges; _c.erase(_c.begin() + (int)node-&gt;edges.size() - 1); }());&#10;        }&#10;        node-&gt;hortree = new Hortree((int)node-&gt;edges.size());&#10;    }&#10;    for (auto&amp; node : dfs) {&#10;        if (node-&gt;parent-&gt;bestChild == node) {&#10;            continue;&#10;        }&#10;        auto amt = 0;&#10;        Node* subNode = node-&gt;bestChild;&#10;        while (subNode != nullptr) {&#10;            subNode-&gt;treeix = amt;&#10;            subNode = subNode-&gt;bestChild;&#10;            amt++;&#10;        }&#10;        node-&gt;vertree = new Vertree(node, amt);&#10;        subNode = node-&gt;bestChild;&#10;        while (subNode != nullptr) {&#10;            subNode-&gt;vertree = node-&gt;vertree;&#10;            subNode = subNode-&gt;bestChild;&#10;        }&#10;    }&#10;    for (auto&amp; node : ([&amp;]() { auto&amp;&amp; _c = dfs; return vector&lt;decay_t&lt;decltype(_c.front())&gt;&gt;(_c.rbegin(), _c.rend()); }())) {&#10;        if (node != nodes[1]) {&#10;            node-&gt;update();&#10;        }&#10;    }&#10;    long long last = 0;&#10;    for (auto i = 1; i &lt;= q; i++) {&#10;        const auto d = (nextLong() + last) % (n - 1);&#10;        auto e = (nextLong() + last) % w;&#10;        auto node = qodes[(int)(d)];&#10;        node-&gt;parentLength = e;&#10;        while (node != nodes[1]) {&#10;            node.update();&#10;            if (node == node-&gt;parent-&gt;bestChild) {&#10;                node = node-&gt;vertree-&gt;topNode;&#10;            } else {&#10;                node = node-&gt;parent;&#10;            }&#10;        }&#10;        last = max({nodes[1].hortree-&gt;posAnswer(), nodes[1].vertree-&gt;posAnswer(), nodes[1].hortree-&gt;longest() + nodes[1].vertree-&gt;longest()});&#10;        cout &lt;&lt; last &lt;&lt; '\n';&#10;    }&#10;    return 0;&#10;}&#10;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: C++ compilation failed for example_dynamic_diameter:
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:386:63: error: function 'longest' with deduced return type cannot be used before it is defined
+  386 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));
       |                                                               ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:95:10: note: 'longest' declared here
-   95 |     auto longest();
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:348:10: note: 'longest' declared here
+  348 |     auto longest();
       |          ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:133:98: error: function 'longest' with deduced return type cannot be used before it is defined
-  133 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:386:98: error: function 'longest' with deduced return type cannot be used before it is defined
+  386 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));
       |                                                                                                  ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:95:10: note: 'longest' declared here
-   95 |     auto longest();
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:348:10: note: 'longest' declared here
+  348 |     auto longest();
       |          ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:133:118: error: function 'posAnswer' with deduced return type cannot be used before it is defined
-  133 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:386:118: error: function 'posAnswer' with deduced return type cannot be used before it is defined
+  386 |         vertree-&gt;update(treeix, Verval(parentLength, hortree-&gt;longest() + parentLength, hortree-&gt;longest(), hortree-&gt;posAnswer()));
       |                                                                                                                      ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:96:10: note: 'posAnswer' declared here
-   96 |     auto posAnswer();
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:349:10: note: 'posAnswer' declared here
+  349 |     auto posAnswer();
       |          ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:61: error: function 'longest' with deduced return type cannot be used before it is defined
-  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:61: error: function 'longest' with deduced return type cannot be used before it is defined
+  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
       |                                                             ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:114:10: note: 'longest' declared here
-  114 |     auto longest();
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:367:10: note: 'longest' declared here
+  367 |     auto longest();
       |          ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:81: error: function 'longest' with deduced return type cannot be used before it is defined
-  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:81: error: function 'longest' with deduced return type cannot be used before it is defined
+  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
       |                                                                                 ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:95:10: note: 'longest' declared here
-   95 |     auto longest();
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:348:10: note: 'longest' declared here
+  348 |     auto longest();
       |          ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:125: error: function 'posAnswer' with deduced return type cannot be used before it is defined
-  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:125: error: function 'posAnswer' with deduced return type cannot be used before it is defined
+  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
       |                                                                                                                             ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:115:10: note: 'posAnswer' declared here
-  115 |     auto posAnswer();
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:368:10: note: 'posAnswer' declared here
+  368 |     auto posAnswer();
       |          ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:147: error: function 'posAnswer' with deduced return type cannot be used before it is defined
-  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:147: error: function 'posAnswer' with deduced return type cannot be used before it is defined
+  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
       |                                                                                                                                                   ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:96:10: note: 'posAnswer' declared here
-   96 |     auto posAnswer();
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:349:10: note: 'posAnswer' declared here
+  349 |     auto posAnswer();
       |          ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:169: error: function 'longest' with deduced return type cannot be used before it is defined
-  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:169: error: function 'longest' with deduced return type cannot be used before it is defined
+  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
       |                                                                                                                                                                         ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:114:10: note: 'longest' declared here
-  114 |     auto longest();
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:367:10: note: 'longest' declared here
+  367 |     auto longest();
       |          ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:135:190: error: function 'longest' with deduced return type cannot be used before it is defined
-  135 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:388:190: error: function 'longest' with deduced return type cannot be used before it is defined
+  388 |         parent-&gt;hortree-&gt;update(treeix, Horval(max(vertree-&gt;longest(), hortree-&gt;longest()) + parentLength, 0, max({vertree-&gt;posAnswer(), hortree-&gt;posAnswer(), vertree-&gt;longest() + hortree-&gt;longest()})));
       |                                                                                                                                                                                              ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:95:10: note: 'longest' declared here
-   95 |     auto longest();
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:348:10: note: 'longest' declared here
+  348 |     auto longest();
       |          ^
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:202:28: error: no viable overloaded '='
-  202 |             qodes[edge.ix] = edge.node;
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:455:28: error: no viable overloaded '='
+  455 |             qodes[edge.ix] = edge.node;
       |             ~~~~~~~~~~~~~~ ^ ~~~~~~~~~
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:64:8: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'Node *' to 'const Node' for 1st argument; dereference the argument with *
-   64 | struct Node {
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:317:8: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'Node *' to 'const Node' for 1st argument; dereference the argument with *
+  317 | struct Node {
       |        ^~~~
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:64:8: note: candidate function (the implicit move assignment operator) not viable: no known conversion from 'Node *' to 'Node' for 1st argument; dereference the argument with *
-   64 | struct Node {
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:317:8: note: candidate function (the implicit move assignment operator) not viable: no known conversion from 'Node *' to 'Node' for 1st argument; dereference the argument with *
+  317 | struct Node {
       |        ^~~~
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:205:20: error: no viable overloaded '='
-  205 |             dfs[j] = edge.node;
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:458:20: error: no viable overloaded '='
+  458 |             dfs[j] = edge.node;
       |             ~~~~~~ ^ ~~~~~~~~~
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:64:8: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'Node *' to 'const Node' for 1st argument; dereference the argument with *
-   64 | struct Node {
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:317:8: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'Node *' to 'const Node' for 1st argument; dereference the argument with *
+  317 | struct Node {
       |        ^~~~
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:64:8: note: candidate function (the implicit move assignment operator) not viable: no known conversion from 'Node *' to 'Node' for 1st argument; dereference the argument with *
-   64 | struct Node {
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:317:8: note: candidate function (the implicit move assignment operator) not viable: no known conversion from 'Node *' to 'Node' for 1st argument; dereference the argument with *
+  317 | struct Node {
       |        ^~~~
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:211:13: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
-  211 |         node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:464:13: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  464 |         node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;
       |         ~~~~^~
       |             .
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:211:42: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
-  211 |         node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:464:42: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  464 |         node-&gt;parent-&gt;subTreeSize += node-&gt;subTreeSize;
       |                                      ~~~~^~
       |                                          .
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:213:39: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
-  213 |         for (auto k = 0; k &lt; (int)node-&gt;edges.size(); k++) {
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:466:39: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  466 |         for (auto k = 0; k &lt; (int)node-&gt;edges.size(); k++) {
       |                                   ~~~~^~
       |                                       .
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:214:17: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
-  214 |             node-&gt;edges[k].node-&gt;treeix = k;
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:467:17: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  467 |             node-&gt;edges[k].node-&gt;treeix = k;
       |             ~~~~^~
       |                 .
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:215:21: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
-  215 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:468:21: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  468 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {
       |                 ~~~~^~
       |                     .
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:215:51: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
-  215 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:468:51: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  468 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {
       |                                               ~~~~^~
       |                                                   .
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:215:82: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
-  215 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:468:82: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  468 |             if (node-&gt;bestChild == nullptr || node-&gt;bestChild-&gt;subTreeSize &lt; node-&gt;edges[k].node-&gt;subTreeSize) {
       |                                                                              ~~~~^~
       |                                                                                  .
-/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter11127563955522754878/test.cpp:216:21: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
-  216 |                 node-&gt;bestChild = node-&gt;edges[k].node;
+/var/folders/7q/5_t8_qk16jz0yf0l00rc4s_m0000gn/T/transpiler_test_example_dynamic_diameter6018025968695465872/test.cpp:469:21: error: member reference type 'Node' is not a pointer; did you mean to use '.'?
+  469 |                 node-&gt;bestChild = node-&gt;edges[k].node;
       |                 ~~~~^~
       |                     .
 fatal error: too many errors emitted, stopping now [-ferror-limit=]
@@ -152,6 +152,259 @@ fatal error: too many errors emitted, stopping now [-ferror-limit=]
 
 
 Generated C++:
+// Transpiled from Kotlin to C++ using https://github.com/TlatoaniHJ/kotlin-transpiler
+//
+// import java.util.*
+// import kotlin.math.max
+//
+// fun main() {
+//     val n = nextInt()
+//     val q = nextInt()
+//     val w = nextLong()
+//     val nodes = Array(n + 1, ::Node)
+//     nodes[1].parent = nodes[0]
+//     nodes[1].edges.add(Edge(nodes[0], 0, 0))
+//     for (i in 0 until n - 1) {
+//         val a = nextInt()
+//         val b = nextInt()
+//         val length = nextLong()
+//         nodes[a].edges.add(Edge(nodes[b], length, i))
+//         nodes[b].edges.add(Edge(nodes[a], length, i))
+//     }
+//     val dfs = Array(n) { nodes[1] }
+//     val qodes = Array(n - 1) { nodes[0] }
+//     var j = 1
+//     for (i in 0 until n) {
+//         for (k in 0 until dfs[i].edges.size - 1) {
+//             var edge = dfs[i].edges[k]
+//             if (edge.node == dfs[i].parent) {
+//                 edge = dfs[i].edges.last()
+//                 dfs[i].edges[k] = edge
+//             }
+//             qodes[edge.ix] = edge.node
+//             edge.node.parent = dfs[i]
+//             edge.node.parentLength = edge.length
+//             dfs[j] = edge.node
+//             j++
+//         }
+//         dfs[i].edges.removeAt(dfs[i].edges.size - 1)
+//     }
+//     for (node in dfs.reversed()) {
+//         node.parent.subTreeSize += node.subTreeSize
+//         var bestIx = -1
+//         for (k in 0 until node.edges.size) {
+//             node.edges[k].node.treeix = k
+//             if (node.bestChild == null || node.bestChild!!.subTreeSize &lt; node.edges[k].node.subTreeSize) {
+//                 node.bestChild = node.edges[k].node
+//                 bestIx = k
+//             }
+//         }
+//         //println(&quot;$node.bestChild = ${node.bestChild}&quot;)
+//         if (node.bestChild != null) {
+//             node.edges.last().node.treeix = bestIx
+//             node.edges[bestIx] = node.edges.last()
+//             node.edges.removeAt(node.edges.size - 1)
+//         }
+//         node.hortree = Hortree(node.edges.size)
+//     }
+//     for (node in dfs) {
+//         if (node.parent.bestChild == node) {
+//             continue
+//         }
+//         var amt = 0
+//         var subNode: Node? = node.bestChild
+//         while (subNode != null) {
+//             subNode.treeix = amt
+//             subNode = subNode.bestChild
+//             amt++
+//         }
+//         node.vertree = Vertree(node, amt)
+//         subNode = node.bestChild
+//         while (subNode != null) {
+//             subNode.vertree = node.vertree
+//             subNode = subNode.bestChild
+//         }
+//     }
+//     for (node in dfs.reversed()) {
+//         if (node != nodes[1]) {
+//             node.update()
+//         }
+//     }
+//     var last: Long = 0
+//     for (i in 1..q) {
+//         val d = (nextLong() + last) % (n - 1)
+//         var e = (nextLong() + last) % w
+//         var node = qodes[d.toInt()]
+//         //println(&quot;node = $node, e = $e&quot;)
+//         node.parentLength = e
+//         while (node != nodes[1]) {
+//             node.update()
+//             if (node == node.parent.bestChild) {
+//                 node = node.vertree.topNode
+//             } else {
+//                 node = node.parent
+//             }
+//         }
+//         last = maxOf(nodes[1].hortree.posAnswer(), nodes[1].vertree.posAnswer(), nodes[1].hortree.longest() + nodes[1].vertree.longest())
+//         println(last)
+//     }
+// }
+//
+// class Node(val ix: Int) {
+//     lateinit var parent: Node
+//     var parentLength: Long = -1
+//     var subTreeSize = 1
+//     val edges = mutableListOf&lt;Edge&gt;()
+//     var bestChild: Node? = null
+//     lateinit var hortree: Hortree
+//     lateinit var vertree: Vertree
+//     var treeix = -1
+//
+//     fun update() {
+//         //println(&quot;$this.update()&quot;)
+//         if (parent.bestChild == this) {
+//             vertree.update(
+//                 treeix,
+//                 Verval(
+//                     parentLength,
+//                     hortree.longest() + parentLength,
+//                     hortree.longest(),
+//                     hortree.posAnswer()
+//                 )
+//             )
+//         } else {
+//             parent.hortree.update(
+//                 treeix,
+//                 Horval(
+//                     max(vertree.longest(),
+//                         hortree.longest()) + parentLength,
+//                     0,
+//                     maxOf(vertree.posAnswer(), hortree.posAnswer(), vertree.longest() + hortree.longest())
+//                 )
+//             )
+//         }
+//     }
+// }
+//
+// class Edge(val node: Node, val length: Long, val ix: Int)
+//
+// val HORIZONTAL_IDENTITY = Horval(0, 0, 0)
+// val VERTICAL_IDENTITY = Verval(0, 0, 0, 0)
+//
+// data class Horval(val longest1: Long, val longest2: Long, val posAnswer: Long) {
+//     operator fun plus(other: Horval): Horval {
+//         if (longest1 &gt; other.longest1) {
+//             return Horval(longest1, max(longest2, other.longest1), max(posAnswer, other.posAnswer))
+//         } else {
+//             return Horval(other.longest1, max(longest1, other.longest2), max(posAnswer, other.posAnswer))
+//         }
+//     }
+// }
+//
+// data class Verval(val length: Long, val longest: Long, val longestToUse: Long, val posAnswer: Long) {
+//     // this is above, other is below
+//     operator fun times(other: Verval) = Verval(
+//         length + other.length,
+//         max(longest, other.longest + length),
+//         max(longestToUse + other.length, other.longestToUse),
+//         maxOf(posAnswer, other.posAnswer, longestToUse + other.longest)
+//     )
+// }
+//
+// class Hortree(amt: Int) {
+//     val length: Int
+//     val array: Array&lt;Horval&gt;
+//
+//     init {
+//         var l = 1
+//         while (l &lt; amt) {
+//             l *= 2
+//         }
+//         length = l
+//         array = Array(length * 2) { HORIZONTAL_IDENTITY }
+//     }
+//
+//     fun update(index: Int, newVal: Horval) {
+//         var node = index + length
+//         array[node] = newVal
+//         node = node shr 1
+//         while (node &gt; 0) {
+//             array[node] = array[2 * node] + array[(2 * node) + 1]
+//             node = node shr 1
+//         }
+//     }
+//
+//     fun longest() = array[1].longest1
+//     fun posAnswer() = max(array[1].longest1 + array[1].longest2, array[1].posAnswer)
+// }
+//
+// class Vertree(val topNode: Node, amt: Int) {
+//     val length: Int
+//     val array: Array&lt;Verval&gt;
+//
+//     init {
+//         var l = 1
+//         while (l &lt; amt) {
+//             l *= 2
+//         }
+//         length = l
+//         array = Array(length * 2) { VERTICAL_IDENTITY }
+//     }
+//
+//     fun update(index: Int, newVal: Verval) {
+//         //println(&quot;update($index, $newVal)&quot;)
+//         var node = index + length
+//         array[node] = newVal
+//         //println(&quot;array[$node] = ${array[node]}&quot;)
+//         node = node shr 1
+//         while (node &gt; 0) {
+//             array[node] = array[2 * node] * array[(2 * node) + 1]
+//             //println(&quot;array[$node] = ${array[node]}&quot;)
+//             node = node shr 1
+//         }
+//     }
+//
+//     fun longest() = array[1].longest
+//     fun posAnswer() = max(array[1].longestToUse, array[1].posAnswer)
+// }
+//
+// /*
+//
+// Sample 1:
+// 4 3 2000
+// 1 2 100
+// 2 3 1000
+// 2 4 1000
+// 2 1030
+// 1 1020
+// 1 890
+//
+//
+// Sample 2:
+// 10 10 10000
+// 1 9 1241
+// 5 6 1630
+// 10 5 1630
+// 2 6 853
+// 10 1 511
+// 5 3 760
+// 8 3 1076
+// 4 10 1483
+// 7 10 40
+// 8 2051
+// 5 6294
+// 5 4168
+// 7 1861
+// 0 5244
+// 6 5156
+// 3 3001
+// 8 5267
+// 5 3102
+// 8 3623
+//
+//
+//  */
+
 #include &lt;bits/stdc++.h&gt;
 using namespace std;
 
@@ -430,32 +683,32 @@ int main() {
 	at java.base@11.0.11/java.util.ArrayList.forEach(ArrayList.java:1541)
 </failure>
   </testcase>
-  <testcase name="example_hanabi" classname="transpiler.TranspilerTest" time="5.958"/>
-  <testcase name="example_interesting_problem" classname="transpiler.TranspilerTest" time="5.573"/>
-  <testcase name="example_jaimes_palace" classname="transpiler.TranspilerTest" time="5.091"/>
-  <testcase name="example_omkar_time_travel" classname="transpiler.TranspilerTest" time="5.618"/>
-  <testcase name="example_rainbow_branch" classname="transpiler.TranspilerTest" time="6.227"/>
-  <testcase name="example_sub_mst" classname="transpiler.TranspilerTest" time="5.801"/>
-  <testcase name="global_vals_with_classes" classname="transpiler.TranspilerTest" time="4.592"/>
-  <testcase name="if_when" classname="transpiler.TranspilerTest" time="4.541"/>
-  <testcase name="labeled_breaks" classname="transpiler.TranspilerTest" time="4.56"/>
-  <testcase name="lambdas" classname="transpiler.TranspilerTest" time="4.902"/>
-  <testcase name="lateinit" classname="transpiler.TranspilerTest" time="4.158"/>
-  <testcase name="lists" classname="transpiler.TranspilerTest" time="4.85"/>
-  <testcase name="local_var_name_collision" classname="transpiler.TranspilerTest" time="4.383"/>
-  <testcase name="loops" classname="transpiler.TranspilerTest" time="4.639"/>
-  <testcase name="maps" classname="transpiler.TranspilerTest" time="5.048"/>
-  <testcase name="method_return_types" classname="transpiler.TranspilerTest" time="4.206"/>
-  <testcase name="nested_functions" classname="transpiler.TranspilerTest" time="4.52"/>
-  <testcase name="nullable_class_members" classname="transpiler.TranspilerTest" time="4.18"/>
-  <testcase name="numeric_constants" classname="transpiler.TranspilerTest" time="4.255"/>
-  <testcase name="operator_overloading" classname="transpiler.TranspilerTest" time="4.273"/>
-  <testcase name="out_of_line_methods" classname="transpiler.TranspilerTest" time="4.254"/>
-  <testcase name="sorting" classname="transpiler.TranspilerTest" time="5.412"/>
-  <testcase name="string_templates" classname="transpiler.TranspilerTest" time="4.444"/>
-  <testcase name="treeset_treemap" classname="transpiler.TranspilerTest" time="4.838"/>
-  <testcase name="user_class_property_access" classname="transpiler.TranspilerTest" time="4.568"/>
-  <testcase name="zip_destructuring" classname="transpiler.TranspilerTest" time="4.669"/>
+  <testcase name="example_hanabi" classname="transpiler.TranspilerTest" time="5.857"/>
+  <testcase name="example_interesting_problem" classname="transpiler.TranspilerTest" time="5.48"/>
+  <testcase name="example_jaimes_palace" classname="transpiler.TranspilerTest" time="5.084"/>
+  <testcase name="example_omkar_time_travel" classname="transpiler.TranspilerTest" time="5.529"/>
+  <testcase name="example_rainbow_branch" classname="transpiler.TranspilerTest" time="6.205"/>
+  <testcase name="example_sub_mst" classname="transpiler.TranspilerTest" time="5.767"/>
+  <testcase name="global_vals_with_classes" classname="transpiler.TranspilerTest" time="4.522"/>
+  <testcase name="if_when" classname="transpiler.TranspilerTest" time="4.376"/>
+  <testcase name="labeled_breaks" classname="transpiler.TranspilerTest" time="4.659"/>
+  <testcase name="lambdas" classname="transpiler.TranspilerTest" time="4.817"/>
+  <testcase name="lateinit" classname="transpiler.TranspilerTest" time="4.201"/>
+  <testcase name="lists" classname="transpiler.TranspilerTest" time="4.862"/>
+  <testcase name="local_var_name_collision" classname="transpiler.TranspilerTest" time="4.478"/>
+  <testcase name="loops" classname="transpiler.TranspilerTest" time="4.704"/>
+  <testcase name="maps" classname="transpiler.TranspilerTest" time="5.084"/>
+  <testcase name="method_return_types" classname="transpiler.TranspilerTest" time="4.95"/>
+  <testcase name="nested_functions" classname="transpiler.TranspilerTest" time="4.531"/>
+  <testcase name="nullable_class_members" classname="transpiler.TranspilerTest" time="4.271"/>
+  <testcase name="numeric_constants" classname="transpiler.TranspilerTest" time="4.347"/>
+  <testcase name="operator_overloading" classname="transpiler.TranspilerTest" time="4.517"/>
+  <testcase name="out_of_line_methods" classname="transpiler.TranspilerTest" time="4.277"/>
+  <testcase name="sorting" classname="transpiler.TranspilerTest" time="5.327"/>
+  <testcase name="string_templates" classname="transpiler.TranspilerTest" time="4.457"/>
+  <testcase name="treeset_treemap" classname="transpiler.TranspilerTest" time="4.792"/>
+  <testcase name="user_class_property_access" classname="transpiler.TranspilerTest" time="4.444"/>
+  <testcase name="zip_destructuring" classname="transpiler.TranspilerTest" time="6.478"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

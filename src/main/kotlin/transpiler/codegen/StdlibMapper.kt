@@ -315,7 +315,20 @@ object StdlibMapper {
             "removeAt"   -> if (args.size == 1) "([&]() { auto&& _c = $receiver; _c.erase(_c.begin() + ${arg(0)}); }())" else null
             "remove"     -> when (args.size) {
                 0 -> "([&]() { auto&& _c = $receiver; auto _v = _c.top(); _c.pop(); return _v; }())"
-                1 -> "([&]() { auto&& _c = $receiver; auto _it = find(_c.begin(), _c.end(), ${arg(0)}); if (_it != _c.end()) _c.erase(_it); }())"
+                1 -> "([&](auto&& _c, auto _k) { " +
+                     "if constexpr (requires { _c.find(_k); }) { " +
+                       "auto _it = _c.find(_k); " +
+                       "if constexpr (requires { _it->second; }) { " +
+                         "using _V = decay_t<decltype(_it->second)>; " +
+                         "if (_it == _c.end()) return _V{}; " +
+                         "_V _v = _it->second; _c.erase(_it); return _v; " +
+                       "} else { " +
+                         "bool _r = _it != _c.end(); if (_r) _c.erase(_it); return _r; " +
+                       "} " +
+                     "} else { " +
+                       "auto _it = find(_c.begin(), _c.end(), _k); " +
+                       "bool _r = _it != _c.end(); if (_r) _c.erase(_it); return _r; " +
+                     "} })($receiver, ${arg(0)})"
                 else -> null
             }
             "removeAll"  -> null
@@ -376,6 +389,12 @@ object StdlibMapper {
             "higherEntry"-> "(*$receiver.upper_bound(${arg(0)}))"
             "ceilingEntry"-> "(*$receiver.lower_bound(${arg(0)}))"
             "headSet", "tailSet", "subSet" -> null
+
+            // ── TreeMap first/last ────────────────────────────────────────────
+            "firstKey"   -> "($receiver.begin()->first)"
+            "lastKey"    -> "($receiver.rbegin()->first)"
+            "firstEntry" -> "(*$receiver.begin())"
+            "lastEntry"  -> "(*$receiver.rbegin())"
 
             // ── Sort (12 variants) ────────────────────────────────────────────
             "sort"            -> "([&]() { auto&& _c = $receiver; sort(_c.begin(), _c.end()); }())"

@@ -2327,7 +2327,7 @@ class CodeGenerator(val config: Config = Config.default) {
     fun genRepeat(n: String, lambda: LambdaExpression): String {
         val indexVar = lambda.params.firstOrNull()?.name?.let {
             if (it == "it") "_it" else it
-        } ?: "_i"
+        } ?: if (lambdaBodyUsesIt(lambda.body)) "_it" else "_i"
         val sub = createSubGenerator()
         // Evaluate n once to avoid re-evaluating expressions with side effects (e.g. nextInt())
         sub.emit("auto _n = $n;")
